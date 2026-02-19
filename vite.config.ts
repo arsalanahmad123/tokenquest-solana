@@ -42,7 +42,7 @@ export default defineConfig({
         },
         rollupOptions: {
             // @ts-ignore
-            inject: [path.resolve(__dirname, 'src/process-shim.ts')],
+            // inject: [path.resolve(__dirname, 'src/process-shim.ts')],
         },
     },
     resolve: {
