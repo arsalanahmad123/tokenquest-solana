@@ -630,7 +630,7 @@ const Index = () => {
                 >
                     Powered by
                     <img
-                        src="/logo.png"
+                        src="https://cdn.prod.website-files.com/6877cb653b5f265eeac09fa9/6877d604162ffb3ea55f5f14_relume-237698.png"
                         alt=""
                         style={{
                             width: '90px',
