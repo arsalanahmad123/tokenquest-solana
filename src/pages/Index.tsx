@@ -241,10 +241,10 @@ const Index = () => {
     const getStepLabel = () => {
         if (depositComplete) return 'Transaction Complete';
         if (depositing) return 'Confirming Deposit';
-        if (connected && hasAmount) return 'Step 2 · Review & Deposit';
+        if (connected && hasAmount) return 'Review & Deposit';
         if (connected) return 'Wallet Connected';
-        if (isDeposit) return 'Step 1 · Connect to Deposit';
-        return 'Step 1 · Connect Wallet';
+        if (isDeposit) return 'Connect to Deposit';
+        return 'Connect Wallet';
     };
 
     const showStatus = useCallback((msg: string, t: StatusType) => {
@@ -623,31 +623,20 @@ const Index = () => {
                         gap: '6px',
                         padding: '12px 24px 16px',
                         borderTop: '1px solid rgba(255,255,255,0.04)',
-                        fontSize: '11px',
+                        fontSize: '13px',
                         color: 'rgba(255,255,255,0.2)',
                         letterSpacing: '0.03em',
                     }}
                 >
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        style={{ width: '12px', height: '12px' }}
-                    >
-                        <rect
-                            x="3"
-                            y="11"
-                            width="18"
-                            height="11"
-                            rx="2"
-                            ry="2"
-                        />
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                    </svg>
-                    Secured by TokenQuest
+                    Powered by
+                    <img
+                        src="/logo.png"
+                        alt=""
+                        style={{
+                            width: '90px',
+                            height: '20px',
+                        }}
+                    />
                 </div>
             </div>
         </>

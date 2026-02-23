@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
     CheckCircle,
@@ -76,7 +76,6 @@ interface Receipt {
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 const POLL_INTERVAL_MS = 4000;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -113,8 +112,15 @@ const Trade = () => {
     const [searchParams] = useSearchParams();
     const tradeId = searchParams.get('id');
     const rawToken = searchParams.get('token');
+    const type = searchParams.get('type');
     const brandName = searchParams.get('brand') || 'TokenQuest';
     const logoUrl = searchParams.get('logo');
+
+    const apiBase = useMemo(() => {
+        return type === 'discord'
+            ? 'https://huntbot.tokenquest.ca/api'
+            : 'https://telegram-api.tokenquest.ca/api/v1';
+    }, [type]);
 
     const sessionTokenRef = useRef<string | null>(null);
     const authCalledRef = useRef(false);
@@ -161,7 +167,7 @@ const Trade = () => {
 
         (async () => {
             try {
-                const res = await fetch(`${API_BASE}/trade/auth`, {
+                const res = await fetch(`${apiBase}/trade/auth`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ tradeId, token: rawToken.trim() }),
@@ -189,7 +195,7 @@ const Trade = () => {
     const fetchTradeState = useCallback(async () => {
         if (!sessionTokenRef.current || !tradeId) return;
         try {
-            const res = await fetch(`${API_BASE}/trade/${tradeId}`, {
+            const res = await fetch(`${apiBase}/trade/${tradeId}`, {
                 headers: { Authorization: `Bearer ${sessionTokenRef.current}` },
             });
             if (!res.ok) return;
@@ -243,7 +249,7 @@ const Trade = () => {
         setSubmitting(true);
         clearStatus();
         try {
-            const res = await fetch(`${API_BASE}/trade/${tradeId}/offer`, {
+            const res = await fetch(`${apiBase}/trade/${tradeId}/offer`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -285,7 +291,7 @@ const Trade = () => {
         setSubmitting(true);
         clearStatus();
         try {
-            const res = await fetch(`${API_BASE}/trade/${tradeId}/confirm`, {
+            const res = await fetch(`${apiBase}/trade/${tradeId}/confirm`, {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${sessionTokenRef.current}` },
             });
@@ -313,7 +319,7 @@ const Trade = () => {
             return;
         setSubmitting(true);
         try {
-            const res = await fetch(`${API_BASE}/trade/${tradeId}/cancel`, {
+            const res = await fetch(`${apiBase}/trade/${tradeId}/cancel`, {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${sessionTokenRef.current}` },
             });
