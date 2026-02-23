@@ -36,7 +36,7 @@ function BrandHeader({
                     src={decodeURIComponent(logoUrl)}
                     alt={brandName}
                     style={{
-                        width: '32px',
+                        width: '100px',
                         height: '32px',
                         borderRadius: '50%',
                         objectFit: 'cover',
