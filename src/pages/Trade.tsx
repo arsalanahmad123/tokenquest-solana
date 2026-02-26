@@ -78,6 +78,10 @@ interface Receipt {
 
 const POLL_INTERVAL_MS = 4000;
 
+// Hard caps enforced by the trade model (and now the UI too)
+const GOLD_MAX = 10_000;
+const DIAMOND_MAX = 10;
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function offerIsEmpty(offer: Offer) {
@@ -118,7 +122,7 @@ const Trade = () => {
 
     const apiBase = useMemo(() => {
         return type === 'discord'
-            ? 'https://huntbot.tokenquest.ca/api'
+            ? 'https://testbot.tokenquest.ca/api'
             : 'https://telegram-api.tokenquest.ca/api/v1';
     }, [type]);
 
@@ -367,6 +371,10 @@ const Trade = () => {
                 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
                 @keyframes tq-spin { to { transform: rotate(360deg); } }
                 @keyframes tq-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+                @keyframes tq-pulse-glow {
+                    0%, 100% { box-shadow: 0 0 0 0 rgba(52,211,153,0.4); }
+                    50% { box-shadow: 0 0 0 8px rgba(52,211,153,0); }
+                }
                 .tq-trade-root * { box-sizing: border-box; }
                 .tq-tab-btn {
                     flex: 1;
@@ -444,13 +452,23 @@ const Trade = () => {
                     font-family: 'DM Sans', sans-serif;
                     border: none;
                     cursor: pointer;
-                    transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+                    transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s, background 0.2s;
+                }
+                .tq-btn-confirm.partner-confirmed {
+                    background: linear-gradient(135deg, hsl(157,90%,40%) 0%, hsl(157,90%,55%) 100%);
+                    color: #000;
+                    animation: tq-pulse-glow 1.8s ease-in-out infinite;
                 }
                 .tq-btn-confirm:hover:not(:disabled) {
                     transform: translateY(-2px);
                     box-shadow: 0 12px 24px -8px rgba(255,255,255,0.2);
                 }
-                .tq-btn-confirm:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+                .tq-btn-confirm:disabled { opacity: 0.35; cursor: not-allowed; transform: none; animation: none; }
+                @media (max-width: 640px) {
+                    .tq-panels-grid { grid-template-columns: 1fr !important; }
+                    .tq-action-bar { flex-direction: column !important; }
+                    .tq-action-bar .tq-btn-confirm, .tq-action-bar .tq-btn-cancel { width: 100%; }
+                }
                 .tq-btn-cancel {
                     display: flex;
                     align-items: center;
@@ -873,6 +891,7 @@ const Trade = () => {
 
                             {/* Two panel grid */}
                             <div
+                                className="tq-panels-grid"
                                 style={{
                                     display: 'grid',
                                     gridTemplateColumns:
@@ -1002,7 +1021,8 @@ const Trade = () => {
                                                 <CurrencyField
                                                     label="💰 Gold"
                                                     value={draftGold}
-                                                    max={tradeState.me.gold}
+                                                    balance={tradeState.me.gold}
+                                                    cap={GOLD_MAX}
                                                     disabled={
                                                         tradeState.myConfirmed ||
                                                         submitting
@@ -1015,7 +1035,10 @@ const Trade = () => {
                                                 <CurrencyField
                                                     label="💎 Diamonds"
                                                     value={draftDiamonds}
-                                                    max={tradeState.me.diamond}
+                                                    balance={
+                                                        tradeState.me.diamond
+                                                    }
+                                                    cap={DIAMOND_MAX}
                                                     disabled={
                                                         tradeState.myConfirmed ||
                                                         submitting
@@ -1447,6 +1470,7 @@ const Trade = () => {
 
                             {/* Action bar */}
                             <div
+                                className="tq-action-bar"
                                 style={{
                                     display: 'flex',
                                     gap: '10px',
@@ -1461,7 +1485,12 @@ const Trade = () => {
                                         offerDirty ||
                                         offerIsEmpty(draftOffer)
                                     }
-                                    className="tq-btn-confirm"
+                                    className={`tq-btn-confirm${
+                                        tradeState.theirConfirmed &&
+                                        !tradeState.myConfirmed
+                                            ? ' partner-confirmed'
+                                            : ''
+                                    }`}
                                 >
                                     {submitting ? (
                                         <Loader2
@@ -1477,7 +1506,13 @@ const Trade = () => {
                                                 size={16}
                                                 color="hsl(157,90%,51%)"
                                             />{' '}
-                                            Confirmed — Waiting
+                                            Confirmed — Waiting for{' '}
+                                            {tradeState.partner.nickname}
+                                        </>
+                                    ) : tradeState.theirConfirmed ? (
+                                        <>
+                                            <CheckCircle size={16} /> Confirm
+                                            Now — They're Ready!
                                         </>
                                     ) : (
                                         <>
@@ -1837,18 +1872,27 @@ function CancelledScreen({
 function CurrencyField({
     label,
     value,
-    max,
+    balance,
+    cap,
     disabled,
     onChange,
 }: {
     label: string;
     value: number;
-    max: number;
+    balance: number; // player's actual balance
+    cap: number; // hard cap (10000 gold / 10 diamonds)
     disabled?: boolean;
     onChange: (v: number) => void;
 }) {
+    // Effective max = min(what player has, hard cap)
+    const effectiveMax = Math.min(balance, cap);
+    const overBalance = value > balance;
+    const overCap = value > cap;
+    const hasWarning = overBalance || overCap;
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {/* Label row */}
             <div
                 style={{
                     display: 'flex',
@@ -1857,20 +1901,33 @@ function CurrencyField({
                 }}
             >
                 <label
-                    style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}
+                    style={{
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        color: 'rgba(255,255,255,0.6)',
+                    }}
                 >
                     {label}
                 </label>
                 <span
-                    style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}
+                    style={{
+                        fontSize: '11px',
+                        color: 'rgba(255,255,255,0.3)',
+                        display: 'flex',
+                        gap: '6px',
+                    }}
                 >
-                    Max: {max.toLocaleString()}
+                    <span>💼 {balance.toLocaleString()} available</span>
+                    <span style={{ opacity: 0.4 }}>·</span>
+                    <span>cap {cap.toLocaleString()}</span>
                 </span>
             </div>
+
+            {/* Input row */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <button
                     onClick={() => onChange(Math.max(0, value - 1))}
-                    disabled={disabled}
+                    disabled={disabled || value <= 0}
                     className="tq-icon-btn"
                     style={{
                         width: '32px',
@@ -1883,22 +1940,30 @@ function CurrencyField({
                 <input
                     type="number"
                     min={0}
-                    max={max}
+                    max={effectiveMax}
                     value={value}
                     disabled={disabled}
                     onChange={(e) =>
                         onChange(
                             Math.min(
-                                max,
+                                effectiveMax,
                                 Math.max(0, parseInt(e.target.value) || 0)
                             )
                         )
                     }
                     className="tq-input"
+                    style={
+                        hasWarning
+                            ? {
+                                  borderColor: 'hsl(0,72%,65%)',
+                                  color: 'hsl(0,72%,65%)',
+                              }
+                            : {}
+                    }
                 />
                 <button
-                    onClick={() => onChange(Math.min(max, value + 1))}
-                    disabled={disabled}
+                    onClick={() => onChange(Math.min(effectiveMax, value + 1))}
+                    disabled={disabled || value >= effectiveMax}
                     className="tq-icon-btn"
                     style={{
                         width: '32px',
@@ -1909,15 +1974,66 @@ function CurrencyField({
                     <Plus size={12} />
                 </button>
             </div>
+
+            {/* Slider */}
             <input
                 type="range"
                 min={0}
-                max={max}
-                value={value}
+                max={effectiveMax}
+                value={Math.min(value, effectiveMax)}
                 disabled={disabled}
                 onChange={(e) => onChange(parseInt(e.target.value))}
                 className="tq-range"
             />
+
+            {/* Balance bar */}
+            <div
+                style={{
+                    position: 'relative',
+                    height: '3px',
+                    borderRadius: '2px',
+                    background: 'rgba(255,255,255,0.06)',
+                }}
+            >
+                <div
+                    style={{
+                        position: 'absolute',
+                        left: 0,
+                        top: 0,
+                        height: '100%',
+                        borderRadius: '2px',
+                        width: `${effectiveMax > 0 ? Math.min(100, (value / effectiveMax) * 100) : 0}%`,
+                        background: hasWarning
+                            ? 'hsl(0,72%,55%)'
+                            : 'linear-gradient(90deg, hsl(157,90%,40%), hsl(157,90%,55%))',
+                        transition: 'width 0.2s',
+                    }}
+                />
+            </div>
+
+            {/* Warning */}
+            {overCap && (
+                <p
+                    style={{
+                        fontSize: '11px',
+                        color: 'hsl(0,72%,65%)',
+                        margin: 0,
+                    }}
+                >
+                    ⚠️ Max tradeable is {cap.toLocaleString()} (hard cap)
+                </p>
+            )}
+            {overBalance && !overCap && (
+                <p
+                    style={{
+                        fontSize: '11px',
+                        color: 'hsl(0,72%,65%)',
+                        margin: 0,
+                    }}
+                >
+                    ⚠️ You only have {balance.toLocaleString()} available
+                </p>
+            )}
         </div>
     );
 }

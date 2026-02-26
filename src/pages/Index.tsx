@@ -190,10 +190,7 @@ const Index = () => {
 
     const solana = useMemo(() => {
         if (!token || !type || !userId || !window.TokenQuestSDK) return null;
-        const baseUrl =
-            type === 'discord'
-                ? 'http://localhost:3000/api'
-                : 'https://telegram-api.tokenquest.ca/api/v1';
+        const baseUrl = 'https://testbot.tokenquest.ca/api';
         try {
             return new window.TokenQuestSDK.SolanaInstance({
                 config: {
