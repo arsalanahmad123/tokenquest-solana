@@ -103,11 +103,11 @@ const CARD_STYLE: React.CSSProperties = {
 };
 
 const LABEL_STYLE: React.CSSProperties = {
-    fontSize: '10px',
+    fontSize: '12px',
     fontWeight: 600,
-    letterSpacing: '0.1em',
+    letterSpacing: '0.08em',
     textTransform: 'uppercase' as const,
-    color: 'rgba(255,255,255,0.3)',
+    color: 'rgba(255,255,255,0.6)',
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -122,7 +122,7 @@ const Trade = () => {
 
     const apiBase = useMemo(() => {
         return type === 'discord'
-            ? 'https://testbot.tokenquest.ca/api'
+            ? 'http://localhost:3000/api'
             : 'https://telegram-api.tokenquest.ca/api/v1';
     }, [type]);
 
@@ -375,7 +375,7 @@ const Trade = () => {
                     0%, 100% { box-shadow: 0 0 0 0 rgba(52,211,153,0.4); }
                     50% { box-shadow: 0 0 0 8px rgba(52,211,153,0); }
                 }
-                .tq-trade-root * { box-sizing: border-box; }
+                .tq-trade-root * { box-sizing: border-box; font-size: 15px; }
                 .tq-tab-btn {
                     flex: 1;
                     padding: 10px 8px;
@@ -422,11 +422,11 @@ const Trade = () => {
                     border-radius: 8px;
                     color: rgba(255,255,255,0.9);
                     font-family: 'DM Mono', monospace;
-                    font-size: 14px;
-                    font-weight: 500;
-                    padding: 7px 8px;
+                    font-size: 15px;
+                    fontWeight: 500;
+                    padding: 10px 12px;
                     outline: none;
-                    transition: border-color 0.15s;
+                    transition: border-color 0.15s, background 0.15s;
                     min-width: 0;
                 }
                 .tq-input:focus { border-color: hsl(157,90%,51%); }
@@ -540,7 +540,8 @@ const Trade = () => {
                     color: 'rgba(255,255,255,0.88)',
                     display: 'flex',
                     flexDirection: 'column',
-                    minHeight: '100%',
+                    minHeight: '100vh',
+                    width: '100%',
                     position: 'relative',
                 }}
             >
@@ -807,10 +808,11 @@ const Trade = () => {
                                 <div>
                                     <h1
                                         style={{
-                                            fontSize: '20px',
-                                            fontWeight: 700,
+                                            fontSize: '24px',
+                                            fontWeight: 800,
                                             margin: '0 0 4px',
-                                            color: 'rgba(255,255,255,0.95)',
+                                            color: 'rgba(255,255,255,1)',
+                                            letterSpacing: '-0.02em',
                                         }}
                                     >
                                         Trading with{' '}
@@ -824,8 +826,8 @@ const Trade = () => {
                                     </h1>
                                     <p
                                         style={{
-                                            fontSize: '12px',
-                                            color: 'rgba(255,255,255,0.35)',
+                                            fontSize: '14px',
+                                            color: 'rgba(255,255,255,0.45)',
                                             margin: 0,
                                         }}
                                     >
@@ -1137,9 +1139,9 @@ const Trade = () => {
                                                                             <p
                                                                                 style={{
                                                                                     fontSize:
-                                                                                        '13px',
-                                                                                    fontWeight: 600,
-                                                                                    color: 'rgba(255,255,255,0.85)',
+                                                                                        '15px',
+                                                                                    fontWeight: 700,
+                                                                                    color: 'rgba(255,255,255,1)',
                                                                                     margin: '0 0 2px',
                                                                                     overflow:
                                                                                         'hidden',
@@ -1637,9 +1639,10 @@ function CompletedScreen({
                 <h1
                     style={{
                         fontSize: '22px',
-                        fontWeight: 700,
-                        color: 'rgba(255,255,255,0.95)',
+                        fontWeight: 800,
+                        color: 'rgba(255,255,255,1)',
                         margin: '0 0 6px',
+                        letterSpacing: '-0.02em',
                     }}
                 >
                     Trade Complete! 🎉
@@ -1713,8 +1716,8 @@ function ReceiptCard({
                     fontWeight: 600,
                     letterSpacing: '0.1em',
                     textTransform: 'uppercase' as const,
-                    color: 'rgba(255,255,255,0.3)',
-                    marginBottom: '10px',
+                    color: 'rgba(255,255,255,0.4)',
+                    marginBottom: '12px',
                 }}
             >
                 {title}
@@ -2056,9 +2059,9 @@ function OfferReadOnly({ label, value }: { label: string; value: string }) {
             </span>
             <span
                 style={{
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    color: 'rgba(255,255,255,0.85)',
+                    fontSize: '15px',
+                    fontWeight: 700,
+                    color: 'rgba(255,255,255,1)',
                     fontFamily: '"DM Mono", monospace',
                 }}
             >

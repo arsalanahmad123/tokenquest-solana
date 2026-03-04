@@ -190,7 +190,7 @@ const Index = () => {
 
     const solana = useMemo(() => {
         if (!token || !type || !userId || !window.TokenQuestSDK) return null;
-        const baseUrl = 'https://testbot.tokenquest.ca/api';
+        const baseUrl = 'http://localhost:3000/api';
         try {
             return new window.TokenQuestSDK.SolanaInstance({
                 config: {
