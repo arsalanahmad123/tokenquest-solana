@@ -122,7 +122,8 @@ const Trade = () => {
 
     const apiBase = useMemo(() => {
         return type === 'discord'
-            ? 'http://localhost:3000/api'
+            ? // ? 'http://localhost:3000/api'
+              'https://testbot.tokenquest.ca/api/v1'
             : 'https://telegram-api.tokenquest.ca/api/v1';
     }, [type]);
 
