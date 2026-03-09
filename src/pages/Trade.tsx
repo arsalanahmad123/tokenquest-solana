@@ -543,6 +543,7 @@ const Trade = () => {
                     flexDirection: 'column',
                     minHeight: '60vh',
                     width: '60vw',
+                    margin: '0 auto',
                     position: 'relative',
                 }}
             >
