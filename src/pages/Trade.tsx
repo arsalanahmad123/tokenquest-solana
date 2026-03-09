@@ -540,8 +540,8 @@ const Trade = () => {
                     color: 'rgba(255,255,255,0.88)',
                     display: 'flex',
                     flexDirection: 'column',
-                    minHeight: '100vh',
-                    width: '100%',
+                    minHeight: '60vh',
+                    width: '60vw',
                     position: 'relative',
                 }}
             >
