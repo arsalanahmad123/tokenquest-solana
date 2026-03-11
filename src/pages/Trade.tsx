@@ -83,8 +83,18 @@ interface TradeState {
 }
 
 interface Receipt {
-    youGave: { gold: number; diamonds: number; items: OfferItem[]; materials: OfferMaterial[] };
-    youReceived: { gold: number; diamonds: number; items: OfferItem[]; materials: OfferMaterial[] };
+    youGave: {
+        gold: number;
+        diamonds: number;
+        items: OfferItem[];
+        materials: OfferMaterial[];
+    };
+    youReceived: {
+        gold: number;
+        diamonds: number;
+        items: OfferItem[];
+        materials: OfferMaterial[];
+    };
 }
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -98,7 +108,12 @@ const DIAMOND_MAX = 10;
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function offerIsEmpty(offer: Offer) {
-    return offer.gold <= 0 && offer.diamonds <= 0 && offer.items.length === 0 && offer.materials.length === 0;
+    return (
+        offer.gold <= 0 &&
+        offer.diamonds <= 0 &&
+        offer.items.length === 0 &&
+        offer.materials.length === 0
+    );
 }
 
 function formatExpiry(iso: string) {
@@ -135,8 +150,8 @@ const Trade = () => {
 
     const apiBase = useMemo(() => {
         return type === 'discord'
-             ? 'http://localhost:3000/api'
-            //   'https://testbot.tokenquest.ca/api'
+            ? //  ? 'http://localhost:3000/api'
+              'https://testbot.tokenquest.ca/api'
             : 'https://telegram-api.tokenquest.ca/api/v1';
     }, [type]);
 
@@ -158,9 +173,9 @@ const Trade = () => {
     const [draftItems, setDraftItems] = useState<OfferItem[]>([]);
     const [draftMaterials, setDraftMaterials] = useState<OfferMaterial[]>([]);
     const [offerDirty, setOfferDirty] = useState(false);
-    const [activeTab, setActiveTab] = useState<'currency' | 'items' | 'materials'>(
-        'currency'
-    );
+    const [activeTab, setActiveTab] = useState<
+        'currency' | 'items' | 'materials'
+    >('currency');
     const [materialSearch, setMaterialSearch] = useState('');
 
     const showStatus = useCallback((msg: string, type: StatusType) => {
@@ -1030,23 +1045,27 @@ const Trade = () => {
                                                 '1px solid rgba(255,255,255,0.05)',
                                         }}
                                     >
-                                        {(['currency', 'items', 'materials'] as const).map(
-                                            (tab) => (
-                                                <button
-                                                    key={tab}
-                                                    onClick={() =>
-                                                        setActiveTab(tab)
-                                                    }
-                                                    className={`tq-tab-btn${activeTab === tab ? ' active' : ''}`}
-                                                >
-                                                    {tab === 'currency'
-                                                        ? '💰 Currency'
-                                                        : tab === 'items'
-                                                        ? '🎒 Items'
-                                                        : '🪨 Materials'}
-                                                </button>
-                                            )
-                                        )}
+                                        {(
+                                            [
+                                                'currency',
+                                                'items',
+                                                'materials',
+                                            ] as const
+                                        ).map((tab) => (
+                                            <button
+                                                key={tab}
+                                                onClick={() =>
+                                                    setActiveTab(tab)
+                                                }
+                                                className={`tq-tab-btn${activeTab === tab ? ' active' : ''}`}
+                                            >
+                                                {tab === 'currency'
+                                                    ? '💰 Currency'
+                                                    : tab === 'items'
+                                                      ? '🎒 Items'
+                                                      : '🪨 Materials'}
+                                            </button>
+                                        ))}
                                     </div>
 
                                     <div
@@ -1305,10 +1324,15 @@ const Trade = () => {
                                                     type="text"
                                                     placeholder="Search materials…"
                                                     value={materialSearch}
-                                                    onChange={(e) => setMaterialSearch(e.target.value)}
+                                                    onChange={(e) =>
+                                                        setMaterialSearch(
+                                                            e.target.value
+                                                        )
+                                                    }
                                                     style={{
                                                         width: '100%',
-                                                        background: 'rgba(255,255,255,0.04)',
+                                                        background:
+                                                            'rgba(255,255,255,0.04)',
                                                         border: '1px solid rgba(255,255,255,0.08)',
                                                         borderRadius: '10px',
                                                         color: 'rgba(255,255,255,0.85)',
@@ -1316,88 +1340,301 @@ const Trade = () => {
                                                         padding: '8px 12px',
                                                         outline: 'none',
                                                         marginBottom: '10px',
-                                                        fontFamily: '"DM Sans", sans-serif',
+                                                        fontFamily:
+                                                            '"DM Sans", sans-serif',
                                                         boxSizing: 'border-box',
                                                     }}
                                                 />
                                                 {(() => {
-                                                    const mats = (tradeState.me.materials ?? []).filter(
+                                                    const mats = (
+                                                        tradeState.me
+                                                            .materials ?? []
+                                                    ).filter(
                                                         (m: Material) =>
                                                             !materialSearch ||
-                                                            m.name.toLowerCase().includes(materialSearch.toLowerCase())
+                                                            m.name
+                                                                .toLowerCase()
+                                                                .includes(
+                                                                    materialSearch.toLowerCase()
+                                                                )
                                                     );
-                                                    if ((tradeState.me.materials ?? []).length === 0) {
+                                                    if (
+                                                        (
+                                                            tradeState.me
+                                                                .materials ?? []
+                                                        ).length === 0
+                                                    ) {
                                                         return (
-                                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', padding: '32px 0', color: 'rgba(255,255,255,0.25)', textAlign: 'center' }}>
-                                                                <span style={{ fontSize: '28px', opacity: 0.4 }}>🪨</span>
-                                                                <p style={{ fontSize: '13px', margin: 0 }}>No materials yet</p>
-                                                                <p style={{ fontSize: '11px', margin: 0 }}>Earn materials by going on hunts</p>
+                                                            <div
+                                                                style={{
+                                                                    display:
+                                                                        'flex',
+                                                                    flexDirection:
+                                                                        'column',
+                                                                    alignItems:
+                                                                        'center',
+                                                                    gap: '8px',
+                                                                    padding:
+                                                                        '32px 0',
+                                                                    color: 'rgba(255,255,255,0.25)',
+                                                                    textAlign:
+                                                                        'center',
+                                                                }}
+                                                            >
+                                                                <span
+                                                                    style={{
+                                                                        fontSize:
+                                                                            '28px',
+                                                                        opacity: 0.4,
+                                                                    }}
+                                                                >
+                                                                    🪨
+                                                                </span>
+                                                                <p
+                                                                    style={{
+                                                                        fontSize:
+                                                                            '13px',
+                                                                        margin: 0,
+                                                                    }}
+                                                                >
+                                                                    No materials
+                                                                    yet
+                                                                </p>
+                                                                <p
+                                                                    style={{
+                                                                        fontSize:
+                                                                            '11px',
+                                                                        margin: 0,
+                                                                    }}
+                                                                >
+                                                                    Earn
+                                                                    materials by
+                                                                    going on
+                                                                    hunts
+                                                                </p>
                                                             </div>
                                                         );
                                                     }
                                                     if (mats.length === 0) {
                                                         return (
-                                                            <div style={{ textAlign: 'center', padding: '24px 0', color: 'rgba(255,255,255,0.25)', fontSize: '13px' }}>
-                                                                No materials match "{materialSearch}"
+                                                            <div
+                                                                style={{
+                                                                    textAlign:
+                                                                        'center',
+                                                                    padding:
+                                                                        '24px 0',
+                                                                    color: 'rgba(255,255,255,0.25)',
+                                                                    fontSize:
+                                                                        '13px',
+                                                                }}
+                                                            >
+                                                                No materials
+                                                                match "
+                                                                {materialSearch}
+                                                                "
                                                             </div>
                                                         );
                                                     }
                                                     return (
-                                                        <div className="tq-scroll" style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                                                            {mats.map((m: Material) => {
-                                                                const regionLabel = m.regionId ? m.regionId.replace(/_/g, ' ') : null;
-                                                                const emoji =
-                                                                    /pelt|fur|hide|skin|wool|feather|scale|leather/i.test(m.name) ? '🦎' :
-                                                                    /fish|salmon|trout|carp|tuna|anchov|eel|bass|perch|pike|cod|herring|crab|lobster|shrimp|anchovy|clam|oyster|whale|shark|scale/i.test(m.name) ? '🐟' :
-                                                                    /ore|copper|iron|gold|silver|platinum|titanium|crystal|gem|diamond|void|mithril|orichalc|cobalt|tungsten|obsidian/i.test(m.name) ? '⛏️' :
-                                                                    '🪨';
-                                                                const matQty = getDraftMatQty(m.name);
-                                                                return (
-                                                                    <div
-                                                                        key={m.name}
-                                                                        style={{
-                                                                            display: 'flex',
-                                                                            alignItems: 'center',
-                                                                            gap: '10px',
-                                                                            borderRadius: '10px',
-                                                                            border: matQty > 0 ? '1px solid rgba(52,211,153,0.3)' : '1px solid rgba(255,255,255,0.06)',
-                                                                            background: matQty > 0 ? 'rgba(52,211,153,0.06)' : 'rgba(255,255,255,0.02)',
-                                                                            padding: '9px 12px',
-                                                                        }}
-                                                                    >
-                                                                        <span style={{ fontSize: '18px', flexShrink: 0 }}>{emoji}</span>
-                                                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                                                            <p style={{ fontSize: '14px', fontWeight: 600, color: 'rgba(255,255,255,0.9)', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                                                {m.name}
-                                                                            </p>
-                                                                            {regionLabel && (
-                                                                                <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', margin: 0 }}>
-                                                                                    {regionLabel} · Have: {m.quantity.toLocaleString()}
-                                                                                </p>
-                                                                            )}
-                                                                        </div>
-                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                                                                            <button
-                                                                                onClick={() => setDraftMatQty(m, Math.max(0, matQty - 1))}
-                                                                                disabled={tradeState.myConfirmed || submitting || matQty <= 0}
-                                                                                className="tq-icon-btn"
+                                                        <div
+                                                            className="tq-scroll"
+                                                            style={{
+                                                                display: 'flex',
+                                                                flexDirection:
+                                                                    'column',
+                                                                gap: '5px',
+                                                            }}
+                                                        >
+                                                            {mats.map(
+                                                                (
+                                                                    m: Material
+                                                                ) => {
+                                                                    const regionLabel =
+                                                                        m.regionId
+                                                                            ? m.regionId.replace(
+                                                                                  /_/g,
+                                                                                  ' '
+                                                                              )
+                                                                            : null;
+                                                                    const emoji =
+                                                                        /pelt|fur|hide|skin|wool|feather|scale|leather/i.test(
+                                                                            m.name
+                                                                        )
+                                                                            ? '🦎'
+                                                                            : /fish|salmon|trout|carp|tuna|anchov|eel|bass|perch|pike|cod|herring|crab|lobster|shrimp|anchovy|clam|oyster|whale|shark|scale/i.test(
+                                                                                    m.name
+                                                                                )
+                                                                              ? '🐟'
+                                                                              : /ore|copper|iron|gold|silver|platinum|titanium|crystal|gem|diamond|void|mithril|orichalc|cobalt|tungsten|obsidian/i.test(
+                                                                                      m.name
+                                                                                  )
+                                                                                ? '⛏️'
+                                                                                : '🪨';
+                                                                    const matQty =
+                                                                        getDraftMatQty(
+                                                                            m.name
+                                                                        );
+                                                                    return (
+                                                                        <div
+                                                                            key={
+                                                                                m.name
+                                                                            }
+                                                                            style={{
+                                                                                display:
+                                                                                    'flex',
+                                                                                alignItems:
+                                                                                    'center',
+                                                                                gap: '10px',
+                                                                                borderRadius:
+                                                                                    '10px',
+                                                                                border:
+                                                                                    matQty >
+                                                                                    0
+                                                                                        ? '1px solid rgba(52,211,153,0.3)'
+                                                                                        : '1px solid rgba(255,255,255,0.06)',
+                                                                                background:
+                                                                                    matQty >
+                                                                                    0
+                                                                                        ? 'rgba(52,211,153,0.06)'
+                                                                                        : 'rgba(255,255,255,0.02)',
+                                                                                padding:
+                                                                                    '9px 12px',
+                                                                            }}
+                                                                        >
+                                                                            <span
+                                                                                style={{
+                                                                                    fontSize:
+                                                                                        '18px',
+                                                                                    flexShrink: 0,
+                                                                                }}
                                                                             >
-                                                                                <Minus size={11} />
-                                                                            </button>
-                                                                            <span style={{ width: '22px', textAlign: 'center', fontSize: '13px', fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>
-                                                                                {matQty}
+                                                                                {
+                                                                                    emoji
+                                                                                }
                                                                             </span>
-                                                                            <button
-                                                                                onClick={() => setDraftMatQty(m, Math.min(m.quantity, matQty + 1))}
-                                                                                disabled={tradeState.myConfirmed || submitting || matQty >= m.quantity}
-                                                                                className="tq-icon-btn"
+                                                                            <div
+                                                                                style={{
+                                                                                    flex: 1,
+                                                                                    minWidth: 0,
+                                                                                }}
                                                                             >
-                                                                                <Plus size={11} />
-                                                                            </button>
+                                                                                <p
+                                                                                    style={{
+                                                                                        fontSize:
+                                                                                            '14px',
+                                                                                        fontWeight: 600,
+                                                                                        color: 'rgba(255,255,255,0.9)',
+                                                                                        margin: '0 0 2px',
+                                                                                        overflow:
+                                                                                            'hidden',
+                                                                                        textOverflow:
+                                                                                            'ellipsis',
+                                                                                        whiteSpace:
+                                                                                            'nowrap',
+                                                                                    }}
+                                                                                >
+                                                                                    {
+                                                                                        m.name
+                                                                                    }
+                                                                                </p>
+                                                                                {regionLabel && (
+                                                                                    <p
+                                                                                        style={{
+                                                                                            fontSize:
+                                                                                                '11px',
+                                                                                            color: 'rgba(255,255,255,0.3)',
+                                                                                            margin: 0,
+                                                                                        }}
+                                                                                    >
+                                                                                        {
+                                                                                            regionLabel
+                                                                                        }{' '}
+                                                                                        ·
+                                                                                        Have:{' '}
+                                                                                        {m.quantity.toLocaleString()}
+                                                                                    </p>
+                                                                                )}
+                                                                            </div>
+                                                                            <div
+                                                                                style={{
+                                                                                    display:
+                                                                                        'flex',
+                                                                                    alignItems:
+                                                                                        'center',
+                                                                                    gap: '6px',
+                                                                                    flexShrink: 0,
+                                                                                }}
+                                                                            >
+                                                                                <button
+                                                                                    onClick={() =>
+                                                                                        setDraftMatQty(
+                                                                                            m,
+                                                                                            Math.max(
+                                                                                                0,
+                                                                                                matQty -
+                                                                                                    1
+                                                                                            )
+                                                                                        )
+                                                                                    }
+                                                                                    disabled={
+                                                                                        tradeState.myConfirmed ||
+                                                                                        submitting ||
+                                                                                        matQty <=
+                                                                                            0
+                                                                                    }
+                                                                                    className="tq-icon-btn"
+                                                                                >
+                                                                                    <Minus
+                                                                                        size={
+                                                                                            11
+                                                                                        }
+                                                                                    />
+                                                                                </button>
+                                                                                <span
+                                                                                    style={{
+                                                                                        width: '22px',
+                                                                                        textAlign:
+                                                                                            'center',
+                                                                                        fontSize:
+                                                                                            '13px',
+                                                                                        fontWeight: 600,
+                                                                                        color: 'rgba(255,255,255,0.9)',
+                                                                                    }}
+                                                                                >
+                                                                                    {
+                                                                                        matQty
+                                                                                    }
+                                                                                </span>
+                                                                                <button
+                                                                                    onClick={() =>
+                                                                                        setDraftMatQty(
+                                                                                            m,
+                                                                                            Math.min(
+                                                                                                m.quantity,
+                                                                                                matQty +
+                                                                                                    1
+                                                                                            )
+                                                                                        )
+                                                                                    }
+                                                                                    disabled={
+                                                                                        tradeState.myConfirmed ||
+                                                                                        submitting ||
+                                                                                        matQty >=
+                                                                                            m.quantity
+                                                                                    }
+                                                                                    className="tq-icon-btn"
+                                                                                >
+                                                                                    <Plus
+                                                                                        size={
+                                                                                            11
+                                                                                        }
+                                                                                    />
+                                                                                </button>
+                                                                            </div>
                                                                         </div>
-                                                                    </div>
-                                                                );
-                                                            })}
+                                                                    );
+                                                                }
+                                                            )}
                                                         </div>
                                                     );
                                                 })()}
@@ -1458,7 +1695,8 @@ const Trade = () => {
                                                             key={m.name}
                                                             className="tq-chip"
                                                         >
-                                                            🪨 {m.name} ×{m.quantity}
+                                                            🪨 {m.name} ×
+                                                            {m.quantity}
                                                         </span>
                                                     ))}
                                                 </div>
@@ -1595,15 +1833,16 @@ const Trade = () => {
                                                         />
                                                     )
                                                 )}
-                                                {(tradeState.theirOffer.materials ?? []).map(
-                                                    (mat) => (
-                                                        <OfferReadOnly
-                                                            key={mat.name}
-                                                            label={`🪨 ${mat.name}`}
-                                                            value={`×${mat.quantity}`}
-                                                        />
-                                                    )
-                                                )}
+                                                {(
+                                                    tradeState.theirOffer
+                                                        .materials ?? []
+                                                ).map((mat) => (
+                                                    <OfferReadOnly
+                                                        key={mat.name}
+                                                        label={`🪨 ${mat.name}`}
+                                                        value={`×${mat.quantity}`}
+                                                    />
+                                                ))}
                                             </>
                                         )}
                                     </div>
@@ -1859,10 +2098,18 @@ function ReceiptCard({
     side,
 }: {
     title: string;
-    side: { gold: number; diamonds: number; items: OfferItem[]; materials: OfferMaterial[] };
+    side: {
+        gold: number;
+        diamonds: number;
+        items: OfferItem[];
+        materials: OfferMaterial[];
+    };
 }) {
     const isEmpty =
-        side.gold <= 0 && side.diamonds <= 0 && side.items.length === 0 && (side.materials ?? []).length === 0;
+        side.gold <= 0 &&
+        side.diamonds <= 0 &&
+        side.items.length === 0 &&
+        (side.materials ?? []).length === 0;
     return (
         <div
             style={{
