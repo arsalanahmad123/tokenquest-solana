@@ -28,27 +28,10 @@ type TradeStatus =
     | null;
 type Role = 'initiator' | 'recipient' | null;
 
-interface TradableItem {
-    itemId: string;
-    name: string;
-    type: number;
-    typeLabel: string;
-    emoji: string;
-    quantity: number;
-    level: number;
-}
-
 interface Material {
     name: string;
     quantity: number;
     regionId: string | null;
-}
-
-interface OfferItem {
-    itemId: string;
-    name: string;
-    emoji: string;
-    quantity: number;
 }
 
 interface OfferMaterial {
@@ -59,7 +42,6 @@ interface OfferMaterial {
 interface Offer {
     gold: number;
     diamonds: number;
-    items: OfferItem[];
     materials: OfferMaterial[];
 }
 
@@ -71,7 +53,6 @@ interface TradeState {
         nickname: string;
         gold: number;
         diamond: number;
-        tradableInventory: TradableItem[];
         materials: Material[];
     };
     partner: { nickname: string; discordId: string };
@@ -86,13 +67,11 @@ interface Receipt {
     youGave: {
         gold: number;
         diamonds: number;
-        items: OfferItem[];
         materials: OfferMaterial[];
     };
     youReceived: {
         gold: number;
         diamonds: number;
-        items: OfferItem[];
         materials: OfferMaterial[];
     };
 }
@@ -109,10 +88,7 @@ const DIAMOND_MAX = 10;
 
 function offerIsEmpty(offer: Offer) {
     return (
-        offer.gold <= 0 &&
-        offer.diamonds <= 0 &&
-        offer.items.length === 0 &&
-        offer.materials.length === 0
+        offer.gold <= 0 && offer.diamonds <= 0 && offer.materials.length === 0
     );
 }
 
@@ -150,9 +126,9 @@ const Trade = () => {
 
     const apiBase = useMemo(() => {
         return type === 'discord'
-            ? //  ? 'http://localhost:3000/api'
-              'https://testbot.tokenquest.ca/api'
-            : 'https://telegram-api.tokenquest.ca/api/v1';
+            ? 'http://localhost:3000/api'
+            : //   'https://testbot.tokenquest.ca/api'
+              'https://telegram-api.tokenquest.ca/api/v1';
     }, [type]);
 
     const sessionTokenRef = useRef<string | null>(null);
@@ -170,12 +146,11 @@ const Trade = () => {
 
     const [draftGold, setDraftGold] = useState(0);
     const [draftDiamonds, setDraftDiamonds] = useState(0);
-    const [draftItems, setDraftItems] = useState<OfferItem[]>([]);
     const [draftMaterials, setDraftMaterials] = useState<OfferMaterial[]>([]);
     const [offerDirty, setOfferDirty] = useState(false);
-    const [activeTab, setActiveTab] = useState<
-        'currency' | 'items' | 'materials'
-    >('currency');
+    const [activeTab, setActiveTab] = useState<'currency' | 'materials'>(
+        'currency'
+    );
     const [materialSearch, setMaterialSearch] = useState('');
 
     const showStatus = useCallback((msg: string, type: StatusType) => {
@@ -242,9 +217,6 @@ const Trade = () => {
             setDraftDiamonds((prev) =>
                 offerDirty ? prev : (data.myOffer?.diamonds ?? 0)
             );
-            setDraftItems((prev) =>
-                offerDirty ? prev : (data.myOffer?.items ?? [])
-            );
             setDraftMaterials((prev) =>
                 offerDirty ? prev : (data.myOffer?.materials ?? [])
             );
@@ -261,26 +233,6 @@ const Trade = () => {
         const interval = setInterval(fetchTradeState, POLL_INTERVAL_MS);
         return () => clearInterval(interval);
     }, [phase, fetchTradeState]);
-
-    const getDraftItemQty = (itemId: string) =>
-        draftItems.find((i) => i.itemId === itemId)?.quantity ?? 0;
-
-    const setDraftItemQty = (item: TradableItem, qty: number) => {
-        setDraftItems((prev) => {
-            const filtered = prev.filter((i) => i.itemId !== item.itemId);
-            if (qty <= 0) return filtered;
-            return [
-                ...filtered,
-                {
-                    itemId: item.itemId,
-                    name: item.name,
-                    emoji: item.emoji,
-                    quantity: qty,
-                },
-            ];
-        });
-        setOfferDirty(true);
-    };
 
     const getDraftMatQty = (name: string) =>
         draftMaterials.find((m) => m.name === name)?.quantity ?? 0;
@@ -308,10 +260,6 @@ const Trade = () => {
                 body: JSON.stringify({
                     gold: draftGold,
                     diamonds: draftDiamonds,
-                    items: draftItems.map((i) => ({
-                        itemId: i.itemId,
-                        quantity: i.quantity,
-                    })),
                     materials: draftMaterials.map((m) => ({
                         name: m.name,
                         quantity: m.quantity,
@@ -394,7 +342,6 @@ const Trade = () => {
     const draftOffer: Offer = {
         gold: draftGold,
         diamonds: draftDiamonds,
-        items: draftItems,
         materials: draftMaterials,
     };
 
@@ -1046,11 +993,7 @@ const Trade = () => {
                                         }}
                                     >
                                         {(
-                                            [
-                                                'currency',
-                                                'items',
-                                                'materials',
-                                            ] as const
+                                            ['currency', 'materials'] as const
                                         ).map((tab) => (
                                             <button
                                                 key={tab}
@@ -1061,9 +1004,7 @@ const Trade = () => {
                                             >
                                                 {tab === 'currency'
                                                     ? '💰 Currency'
-                                                    : tab === 'items'
-                                                      ? '🎒 Items'
-                                                      : '🪨 Materials'}
+                                                    : '🪨 Materials'}
                                             </button>
                                         ))}
                                     </div>
@@ -1109,212 +1050,6 @@ const Trade = () => {
                                                     }}
                                                 />
                                             </>
-                                        )}
-
-                                        {activeTab === 'items' && (
-                                            <div>
-                                                {tradeState.me.tradableInventory
-                                                    .length === 0 ? (
-                                                    <div
-                                                        style={{
-                                                            display: 'flex',
-                                                            flexDirection:
-                                                                'column',
-                                                            alignItems:
-                                                                'center',
-                                                            gap: '8px',
-                                                            padding: '32px 0',
-                                                            color: 'rgba(255,255,255,0.25)',
-                                                            textAlign: 'center',
-                                                        }}
-                                                    >
-                                                        <Package
-                                                            size={28}
-                                                            style={{
-                                                                opacity: 0.4,
-                                                            }}
-                                                        />
-                                                        <p
-                                                            style={{
-                                                                fontSize:
-                                                                    '13px',
-                                                                margin: 0,
-                                                            }}
-                                                        >
-                                                            No tradable items
-                                                        </p>
-                                                        <p
-                                                            style={{
-                                                                fontSize:
-                                                                    '11px',
-                                                                margin: 0,
-                                                            }}
-                                                        >
-                                                            Weapons, traps, gear
-                                                            are tradable
-                                                        </p>
-                                                    </div>
-                                                ) : (
-                                                    <div
-                                                        className="tq-scroll"
-                                                        style={{
-                                                            display: 'flex',
-                                                            flexDirection:
-                                                                'column',
-                                                            gap: '6px',
-                                                        }}
-                                                    >
-                                                        {tradeState.me.tradableInventory.map(
-                                                            (item) => {
-                                                                const qty =
-                                                                    getDraftItemQty(
-                                                                        item.itemId
-                                                                    );
-                                                                return (
-                                                                    <div
-                                                                        key={
-                                                                            item.itemId
-                                                                        }
-                                                                        className={`tq-item-row${qty > 0 ? ' selected' : ''}`}
-                                                                    >
-                                                                        <span
-                                                                            style={{
-                                                                                fontSize:
-                                                                                    '20px',
-                                                                                flexShrink: 0,
-                                                                            }}
-                                                                        >
-                                                                            {
-                                                                                item.emoji
-                                                                            }
-                                                                        </span>
-                                                                        <div
-                                                                            style={{
-                                                                                flex: 1,
-                                                                                minWidth: 0,
-                                                                            }}
-                                                                        >
-                                                                            <p
-                                                                                style={{
-                                                                                    fontSize:
-                                                                                        '15px',
-                                                                                    fontWeight: 700,
-                                                                                    color: 'rgba(255,255,255,1)',
-                                                                                    margin: '0 0 2px',
-                                                                                    overflow:
-                                                                                        'hidden',
-                                                                                    textOverflow:
-                                                                                        'ellipsis',
-                                                                                    whiteSpace:
-                                                                                        'nowrap',
-                                                                                }}
-                                                                            >
-                                                                                {
-                                                                                    item.name
-                                                                                }
-                                                                            </p>
-                                                                            <p
-                                                                                style={{
-                                                                                    fontSize:
-                                                                                        '11px',
-                                                                                    color: 'rgba(255,255,255,0.3)',
-                                                                                    margin: 0,
-                                                                                }}
-                                                                            >
-                                                                                {
-                                                                                    item.typeLabel
-                                                                                }{' '}
-                                                                                ·
-                                                                                Lv.
-                                                                                {
-                                                                                    item.level
-                                                                                }{' '}
-                                                                                ·
-                                                                                Have:{' '}
-                                                                                {
-                                                                                    item.quantity
-                                                                                }
-                                                                            </p>
-                                                                        </div>
-                                                                        <div
-                                                                            style={{
-                                                                                display:
-                                                                                    'flex',
-                                                                                alignItems:
-                                                                                    'center',
-                                                                                gap: '6px',
-                                                                                flexShrink: 0,
-                                                                            }}
-                                                                        >
-                                                                            <button
-                                                                                onClick={() =>
-                                                                                    setDraftItemQty(
-                                                                                        item,
-                                                                                        Math.max(
-                                                                                            0,
-                                                                                            qty -
-                                                                                                1
-                                                                                        )
-                                                                                    )
-                                                                                }
-                                                                                disabled={
-                                                                                    tradeState.myConfirmed ||
-                                                                                    submitting
-                                                                                }
-                                                                                className="tq-icon-btn"
-                                                                            >
-                                                                                <Minus
-                                                                                    size={
-                                                                                        11
-                                                                                    }
-                                                                                />
-                                                                            </button>
-                                                                            <span
-                                                                                style={{
-                                                                                    width: '22px',
-                                                                                    textAlign:
-                                                                                        'center',
-                                                                                    fontSize:
-                                                                                        '13px',
-                                                                                    fontWeight: 600,
-                                                                                    color: 'rgba(255,255,255,0.9)',
-                                                                                }}
-                                                                            >
-                                                                                {
-                                                                                    qty
-                                                                                }
-                                                                            </span>
-                                                                            <button
-                                                                                onClick={() =>
-                                                                                    setDraftItemQty(
-                                                                                        item,
-                                                                                        Math.min(
-                                                                                            item.quantity,
-                                                                                            qty +
-                                                                                                1
-                                                                                        )
-                                                                                    )
-                                                                                }
-                                                                                disabled={
-                                                                                    tradeState.myConfirmed ||
-                                                                                    submitting
-                                                                                }
-                                                                                className="tq-icon-btn"
-                                                                            >
-                                                                                <Plus
-                                                                                    size={
-                                                                                        11
-                                                                                    }
-                                                                                />
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
-                                                                );
-                                                            }
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
                                         )}
 
                                         {activeTab === 'materials' && (
@@ -1681,15 +1416,6 @@ const Trade = () => {
                                                             Diamonds
                                                         </span>
                                                     )}
-                                                    {draftItems.map((i) => (
-                                                        <span
-                                                            key={i.itemId}
-                                                            className="tq-chip"
-                                                        >
-                                                            {i.emoji} {i.name} ×
-                                                            {i.quantity}
-                                                        </span>
-                                                    ))}
                                                     {draftMaterials.map((m) => (
                                                         <span
                                                             key={m.name}
@@ -1823,15 +1549,6 @@ const Trade = () => {
                                                         label="💎 Diamonds"
                                                         value={tradeState.theirOffer.diamonds.toLocaleString()}
                                                     />
-                                                )}
-                                                {tradeState.theirOffer.items.map(
-                                                    (item) => (
-                                                        <OfferReadOnly
-                                                            key={item.itemId}
-                                                            label={`${item.emoji} ${item.name}`}
-                                                            value={`×${item.quantity}`}
-                                                        />
-                                                    )
                                                 )}
                                                 {(
                                                     tradeState.theirOffer
@@ -2101,14 +1818,12 @@ function ReceiptCard({
     side: {
         gold: number;
         diamonds: number;
-        items: OfferItem[];
         materials: OfferMaterial[];
     };
 }) {
     const isEmpty =
         side.gold <= 0 &&
         side.diamonds <= 0 &&
-        side.items.length === 0 &&
         (side.materials ?? []).length === 0;
     return (
         <div
@@ -2190,27 +1905,6 @@ function ReceiptCard({
                             </span>
                         </div>
                     )}
-                    {side.items.map((item) => (
-                        <div
-                            key={item.itemId}
-                            style={{
-                                display: 'flex',
-                                gap: '6px',
-                                alignItems: 'center',
-                                fontSize: '13px',
-                            }}
-                        >
-                            <span>{item.emoji}</span>
-                            <span
-                                style={{
-                                    color: 'rgba(255,255,255,0.8)',
-                                    fontWeight: 500,
-                                }}
-                            >
-                                {item.name} ×{item.quantity}
-                            </span>
-                        </div>
-                    ))}
                     {(side.materials ?? []).map((mat) => (
                         <div
                             key={mat.name}
