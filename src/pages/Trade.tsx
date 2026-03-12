@@ -126,9 +126,9 @@ const Trade = () => {
 
     const apiBase = useMemo(() => {
         return type === 'discord'
-            ? 'http://localhost:3000/api'
-            : //   'https://testbot.tokenquest.ca/api'
-              'https://telegram-api.tokenquest.ca/api/v1';
+            ? // ? 'http://localhost:3000/api'
+              'https://testbot.tokenquest.ca/api'
+            : 'https://telegram-api.tokenquest.ca/api/v1';
     }, [type]);
 
     const sessionTokenRef = useRef<string | null>(null);
