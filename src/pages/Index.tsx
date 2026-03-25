@@ -226,13 +226,13 @@ const Index = () => {
 
     const getDescription = () => {
         if (depositComplete)
-            return `Your ${amountParam} SOL deposit is confirmed. Return to ${platform} now.`;
+            return `Your ${amountParam} Diamonds deposit is confirmed. Return to ${platform} now.`;
         if (connected && hasAmount)
             return `Review the amount below and confirm. Funds will be linked to your ${platform} account.`;
         if (connected)
             return `Your wallet is linked to your ${platform} account. You may close this window.`;
         if (isDeposit)
-            return `Connect your Solana wallet to deposit ${amountParam} SOL.`;
+            return `Connect your wallet to deposit ${amountParam} Diamonds.`;
         return `Link your Solana wallet to your ${platform} account for secure asset management.`;
     };
 
@@ -503,7 +503,7 @@ const Index = () => {
                                             letterSpacing: '0.05em',
                                         }}
                                     >
-                                        SOL
+                                        Diamonds
                                     </span>
                                 </div>
                             </div>

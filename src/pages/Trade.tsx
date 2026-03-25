@@ -86,9 +86,12 @@ const DIAMOND_MAX = 10;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function offerIsEmpty(offer: Offer) {
+function offerIsEmpty(offer: Offer | null | undefined) {
+    if (!offer) return true;
     return (
-        offer.gold <= 0 && offer.diamonds <= 0 && offer.materials.length === 0
+        offer.gold <= 0 &&
+        offer.diamonds <= 0 &&
+        (offer.materials?.length ?? 0) === 0
     );
 }
 
@@ -126,7 +129,7 @@ const Trade = () => {
 
     const apiBase = useMemo(() => {
         return type === 'discord'
-            ? // ? 'http://localhost:3000/api'
+            ? // 'http://localhost:3000/api'
               'https://testbot.tokenquest.ca/api'
             : 'https://telegram-api.tokenquest.ca/api/v1';
     }, [type]);
@@ -152,6 +155,7 @@ const Trade = () => {
         'currency'
     );
     const [materialSearch, setMaterialSearch] = useState('');
+    const [giftMode, setGiftMode] = useState(false);
 
     const showStatus = useCallback((msg: string, type: StatusType) => {
         setStatusMsg(msg);
@@ -345,6 +349,16 @@ const Trade = () => {
         materials: draftMaterials,
     };
 
+    // Gift trade: one side has nothing to offer, but the other side does
+    const myDraftEmpty = offerIsEmpty(draftOffer);
+    const theirOfferEmpty = offerIsEmpty(tradeState?.theirOffer ?? null);
+    // isReceivingGift: I'm accepting a gift (I have nothing, they have something OR gift mode on)
+    const isGiftTrade = myDraftEmpty && (!theirOfferEmpty || giftMode);
+    // iAmGifting: I'm sending a gift (I have something, they have nothing)
+    const iAmGifting = !myDraftEmpty && theirOfferEmpty;
+    // Trade is confirmable if: at least one side is non-empty OR gift mode explicitly on
+    const canConfirm = !myDraftEmpty || !theirOfferEmpty || giftMode;
+
     const statusColors = {
         info: {
             bg: 'rgba(255,255,255,0.04)',
@@ -466,6 +480,9 @@ const Trade = () => {
                     .tq-panels-grid { grid-template-columns: 1fr !important; }
                     .tq-action-bar { flex-direction: column !important; }
                     .tq-action-bar .tq-btn-confirm, .tq-action-bar .tq-btn-cancel { width: 100%; }
+                    .tq-trade-root main { padding: 14px !important; }
+                    .tq-trade-root header { padding: 12px 14px !important; }
+                    .tq-scroll { max-height: 180px !important; }
                 }
                 .tq-btn-cancel {
                     display: flex;
@@ -538,8 +555,9 @@ const Trade = () => {
                     color: 'rgba(255,255,255,0.88)',
                     display: 'flex',
                     flexDirection: 'column',
-                    minHeight: '60vh',
-                    width: '60vw',
+                    minHeight: '100dvh',
+                    width: '100%',
+                    maxWidth: '960px',
                     margin: '0 auto',
                     position: 'relative',
                 }}
@@ -669,6 +687,7 @@ const Trade = () => {
                         alignItems: 'center',
                         justifyContent:
                             phase === 'offer' ? 'flex-start' : 'center',
+                        overflowX: 'hidden',
                     }}
                 >
                     {/* Loading */}
@@ -768,11 +787,11 @@ const Trade = () => {
 
                     {/* Done */}
                     {phase === 'done' && (
-                        <div style={{ width: '100%', maxWidth: '480px' }}>
+                        <div style={{ width: '100%', maxWidth: '560px' }}>
                             {tradeState?.status === 'completed' ? (
                                 <CompletedScreen
                                     receipt={receipt}
-                                    partnerName={tradeState?.partner?.nickname}
+                                    tradeState={tradeState}
                                 />
                             ) : (
                                 <CancelledScreen
@@ -788,7 +807,6 @@ const Trade = () => {
                         <div
                             style={{
                                 width: '100%',
-                                maxWidth: '960px',
                                 display: 'flex',
                                 flexDirection: 'column',
                                 gap: '16px',
@@ -857,6 +875,76 @@ const Trade = () => {
                                     {formatExpiry(tradeState.expiresAt)}
                                 </div>
                             </div>
+
+                            {/* Gift trade banners */}
+                            {isGiftTrade && !tradeState.myConfirmed && (
+                                <div
+                                    className="tq-fade"
+                                    style={{
+                                        borderRadius: '12px',
+                                        background: 'rgba(250,204,21,0.07)',
+                                        border: '1px solid rgba(250,204,21,0.2)',
+                                        padding: '12px 16px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px',
+                                        fontSize: '13px',
+                                    }}
+                                >
+                                    <span
+                                        style={{
+                                            fontSize: '18px',
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        🎁
+                                    </span>
+                                    <span
+                                        style={{
+                                            color: 'rgba(250,204,21,0.9)',
+                                            fontWeight: 600,
+                                        }}
+                                    >
+                                        You're receiving a gift — no offer
+                                        required from you. You can confirm
+                                        without adding anything.
+                                    </span>
+                                </div>
+                            )}
+                            {iAmGifting && !tradeState.myConfirmed && (
+                                <div
+                                    className="tq-fade"
+                                    style={{
+                                        borderRadius: '12px',
+                                        background: 'rgba(139,92,246,0.07)',
+                                        border: '1px solid rgba(139,92,246,0.25)',
+                                        padding: '12px 16px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px',
+                                        fontSize: '13px',
+                                    }}
+                                >
+                                    <span
+                                        style={{
+                                            fontSize: '18px',
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        🎁
+                                    </span>
+                                    <span
+                                        style={{
+                                            color: 'rgba(167,139,250,0.9)',
+                                            fontWeight: 600,
+                                        }}
+                                    >
+                                        You're sending a gift —{' '}
+                                        {tradeState.partner.nickname} receives
+                                        without giving anything back.
+                                    </span>
+                                </div>
+                            )}
 
                             {/* Partner confirmed banner */}
                             {tradeState.theirConfirmed &&
@@ -946,9 +1034,48 @@ const Trade = () => {
                                         <div
                                             style={{
                                                 display: 'flex',
+                                                alignItems: 'center',
                                                 gap: '6px',
                                             }}
                                         >
+                                            {/* Gift Mode Toggle */}
+                                            {!tradeState.myConfirmed && (
+                                                <button
+                                                    onClick={() =>
+                                                        setGiftMode((g) => !g)
+                                                    }
+                                                    title={
+                                                        giftMode
+                                                            ? 'Disable gift mode — add your own offer'
+                                                            : 'Enable gift mode — confirm without offering anything'
+                                                    }
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '5px',
+                                                        fontSize: '11px',
+                                                        fontWeight: 600,
+                                                        letterSpacing: '0.05em',
+                                                        borderRadius: '8px',
+                                                        border: giftMode
+                                                            ? '1px solid rgba(250,204,21,0.4)'
+                                                            : '1px solid rgba(255,255,255,0.08)',
+                                                        background: giftMode
+                                                            ? 'rgba(250,204,21,0.12)'
+                                                            : 'rgba(255,255,255,0.04)',
+                                                        color: giftMode
+                                                            ? 'rgba(250,204,21,0.9)'
+                                                            : 'rgba(255,255,255,0.35)',
+                                                        padding: '4px 8px',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.15s',
+                                                        fontFamily:
+                                                            '"DM Sans", sans-serif',
+                                                    }}
+                                                >
+                                                    🎁 Gift Mode
+                                                </button>
+                                            )}
                                             <span
                                                 style={{
                                                     display: 'flex',
@@ -1377,6 +1504,26 @@ const Trade = () => {
                                         )}
 
                                         {/* Offer summary */}
+                                        {isGiftTrade && (
+                                            <div
+                                                style={{
+                                                    borderRadius: '10px',
+                                                    background:
+                                                        'rgba(250,204,21,0.05)',
+                                                    border: '1px solid rgba(250,204,21,0.15)',
+                                                    padding: '10px 14px',
+                                                    fontSize: '12px',
+                                                    color: 'rgba(250,204,21,0.7)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                }}
+                                            >
+                                                <span>🎁</span>
+                                                Nothing — you're receiving a
+                                                gift
+                                            </div>
+                                        )}
                                         {!offerIsEmpty(draftOffer) && (
                                             <div
                                                 style={{
@@ -1603,7 +1750,7 @@ const Trade = () => {
                                         submitting ||
                                         tradeState.myConfirmed ||
                                         offerDirty ||
-                                        offerIsEmpty(draftOffer)
+                                        !canConfirm
                                     }
                                     className={`tq-btn-confirm${
                                         tradeState.theirConfirmed &&
@@ -1633,6 +1780,14 @@ const Trade = () => {
                                         <>
                                             <CheckCircle size={16} /> Confirm
                                             Now — They're Ready!
+                                        </>
+                                    ) : isGiftTrade ? (
+                                        <>
+                                            <span>🎁</span> Accept Gift
+                                        </>
+                                    ) : iAmGifting ? (
+                                        <>
+                                            <span>🎁</span> Send Gift
                                         </>
                                     ) : (
                                         <>
@@ -1720,87 +1875,502 @@ const Trade = () => {
 
 // ─── Done Screens ─────────────────────────────────────────────────────────────
 
-function CompletedScreen({
-    receipt,
-    partnerName,
+function OfferLine({
+    icon,
+    label,
+    value,
 }: {
-    receipt: Receipt | null;
-    partnerName?: string;
+    icon: string;
+    label: string;
+    value: string;
 }) {
     return (
         <div
             style={{
-                ...CARD_STYLE,
-                padding: '40px 32px',
                 display: 'flex',
-                flexDirection: 'column',
                 alignItems: 'center',
-                gap: '20px',
-                textAlign: 'center',
+                gap: '10px',
+                padding: '8px 12px',
+                borderRadius: '10px',
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.06)',
             }}
         >
-            <div
+            <span style={{ fontSize: '18px', flexShrink: 0 }}>{icon}</span>
+            <span
                 style={{
-                    width: '64px',
-                    height: '64px',
-                    borderRadius: '20px',
-                    background: 'rgba(52,211,153,0.08)',
-                    border: '1px solid rgba(52,211,153,0.18)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    flex: 1,
+                    fontSize: '13px',
+                    color: 'rgba(255,255,255,0.6)',
+                    fontWeight: 500,
                 }}
             >
-                <CheckCircle size={30} color="hsl(157,90%,51%)" />
-            </div>
-            <div>
-                <h1
+                {label}
+            </span>
+            <span
+                style={{
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    color: 'rgba(255,255,255,0.92)',
+                    fontFamily: '"DM Mono", monospace',
+                }}
+            >
+                {value}
+            </span>
+        </div>
+    );
+}
+
+// accentRgb: "R,G,B" e.g. "52,211,153"
+function OfferPanel({
+    name,
+    isYou,
+    offer,
+    accentRgb,
+    accentHsl,
+}: {
+    name: string;
+    isYou: boolean;
+    offer:
+        | { gold: number; diamonds: number; materials: OfferMaterial[] }
+        | null
+        | undefined;
+    accentRgb: string;
+    accentHsl: string;
+}) {
+    const empty =
+        !offer ||
+        (offer.gold <= 0 &&
+            offer.diamonds <= 0 &&
+            (offer.materials ?? []).length === 0);
+    return (
+        <div
+            style={{
+                borderRadius: '14px',
+                border: `1px solid rgba(${accentRgb},0.15)`,
+                background: `rgba(${accentRgb},0.05)`,
+                overflow: 'hidden',
+                flex: 1,
+                minWidth: 0,
+            }}
+        >
+            {/* Panel head */}
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '12px 14px',
+                    borderBottom: `1px solid rgba(${accentRgb},0.1)`,
+                }}
+            >
+                <span
                     style={{
-                        fontSize: '22px',
-                        fontWeight: 800,
-                        color: 'rgba(255,255,255,1)',
-                        margin: '0 0 6px',
-                        letterSpacing: '-0.02em',
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        background: accentHsl,
+                        boxShadow: `0 0 6px ${accentHsl}`,
+                        flexShrink: 0,
+                        display: 'inline-block',
+                    }}
+                />
+                <span
+                    style={{
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        letterSpacing: '0.08em',
+                        textTransform: 'uppercase' as const,
+                        color: accentHsl,
                     }}
                 >
-                    Trade Complete! 🎉
-                </h1>
-                {partnerName && (
+                    {isYou ? 'You' : name}
+                </span>
+                {isYou && (
+                    <span
+                        style={{
+                            marginLeft: 4,
+                            fontSize: '10px',
+                            fontWeight: 600,
+                            letterSpacing: '0.06em',
+                            background: `rgba(${accentRgb},0.15)`,
+                            color: accentHsl,
+                            borderRadius: '6px',
+                            padding: '2px 6px',
+                        }}
+                    >
+                        YOU
+                    </span>
+                )}
+            </div>
+            {/* Items */}
+            <div
+                style={{
+                    padding: '12px 14px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                }}
+            >
+                {empty ? (
+                    <div
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '10px 12px',
+                            borderRadius: '10px',
+                            background: 'rgba(255,255,255,0.02)',
+                            border: '1px solid rgba(255,255,255,0.05)',
+                        }}
+                    >
+                        <span style={{ fontSize: '16px' }}>🎁</span>
+                        <span
+                            style={{
+                                fontSize: '13px',
+                                color: 'rgba(255,255,255,0.3)',
+                                fontStyle: 'italic',
+                            }}
+                        >
+                            Nothing — gift
+                        </span>
+                    </div>
+                ) : (
+                    <>
+                        {(offer?.gold ?? 0) > 0 && (
+                            <OfferLine
+                                icon="💰"
+                                label="Gold"
+                                value={offer!.gold.toLocaleString()}
+                            />
+                        )}
+                        {(offer?.diamonds ?? 0) > 0 && (
+                            <OfferLine
+                                icon="💎"
+                                label="Diamonds"
+                                value={offer!.diamonds.toLocaleString()}
+                            />
+                        )}
+                        {(offer?.materials ?? []).map((m) => (
+                            <OfferLine
+                                key={m.name}
+                                icon="🪨"
+                                label={m.name}
+                                value={`×${m.quantity}`}
+                            />
+                        ))}
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function CompletedScreen({
+    receipt,
+    tradeState,
+}: {
+    receipt: Receipt | null;
+    tradeState: TradeState | null;
+}) {
+    // Derive both offers from receipt OR tradeState
+    // receipt.youGave = my offer, receipt.youReceived = their offer
+    // If receipt is null (polled completion), fall back to tradeState offers
+    const myOffer: Offer = receipt?.youGave ??
+        tradeState?.myOffer ?? { gold: 0, diamonds: 0, materials: [] };
+    const theirOffer: Offer = receipt?.youReceived ??
+        tradeState?.theirOffer ?? { gold: 0, diamonds: 0, materials: [] };
+    const myName = tradeState?.me?.nickname ?? 'You';
+    const partnerName = tradeState?.partner?.nickname ?? 'Partner';
+    const completedAt = new Date().toLocaleString([], {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+    });
+
+    return (
+        <div
+            style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+                width: '100%',
+                animation: 'tq-fade 0.4s ease both',
+            }}
+        >
+            {/* ── Success banner ── */}
+            <div
+                style={{
+                    borderRadius: '16px',
+                    background: 'rgba(52,211,153,0.06)',
+                    border: '1px solid rgba(52,211,153,0.18)',
+                    padding: '28px 24px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '10px',
+                    textAlign: 'center',
+                }}
+            >
+                <div
+                    style={{
+                        width: '60px',
+                        height: '60px',
+                        borderRadius: '18px',
+                        background: 'rgba(52,211,153,0.1)',
+                        border: '1px solid rgba(52,211,153,0.22)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                    }}
+                >
+                    <CheckCircle size={28} color="hsl(157,90%,51%)" />
+                </div>
+                <div>
+                    <h1
+                        style={{
+                            fontSize: '22px',
+                            fontWeight: 800,
+                            color: 'rgba(255,255,255,1)',
+                            margin: '0 0 4px',
+                            letterSpacing: '-0.02em',
+                        }}
+                    >
+                        Trade Complete! 🎉
+                    </h1>
                     <p
                         style={{
                             fontSize: '13px',
-                            color: 'rgba(255,255,255,0.4)',
+                            color: 'rgba(255,255,255,0.45)',
                             margin: 0,
                         }}
                     >
-                        Your trade with{' '}
-                        <strong style={{ color: 'rgba(255,255,255,0.65)' }}>
-                            {partnerName}
+                        Between{' '}
+                        <strong style={{ color: 'rgba(255,255,255,0.7)' }}>
+                            {myName}
                         </strong>{' '}
-                        has been finalized.
+                        and{' '}
+                        <strong style={{ color: 'rgba(255,255,255,0.7)' }}>
+                            {partnerName}
+                        </strong>
+                        {' · '}
+                        <span style={{ color: 'rgba(255,255,255,0.3)' }}>
+                            {completedAt}
+                        </span>
                     </p>
-                )}
+                </div>
             </div>
-            {receipt && (
+
+            {/* ── Exchange summary ── */}
+            <div style={{ ...CARD_STYLE }}>
+                {/* Header */}
                 <div
                     style={{
-                        width: '100%',
-                        display: 'grid',
-                        gridTemplateColumns: '1fr 1fr',
-                        gap: '12px',
+                        padding: '14px 16px',
+                        borderBottom: '1px solid rgba(255,255,255,0.05)',
                     }}
                 >
-                    <ReceiptCard title="You Gave" side={receipt.youGave} />
-                    <ReceiptCard
-                        title="You Received"
-                        side={receipt.youReceived}
-                    />
+                    <p style={{ ...LABEL_STYLE, margin: 0 }}>
+                        Exchange Summary
+                    </p>
                 </div>
-            )}
+                <div style={{ padding: '16px' }}>
+                    {/* Both panels side by side */}
+                    <div
+                        style={{
+                            display: 'flex',
+                            gap: '10px',
+                            flexWrap: 'wrap',
+                        }}
+                    >
+                        <OfferPanel
+                            name={myName}
+                            isYou={true}
+                            offer={myOffer}
+                            accentRgb="139,92,246"
+                            accentHsl="hsl(264,100%,64%)"
+                        />
+                        {/* Arrow divider */}
+                        <div
+                            style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '4px',
+                                flexShrink: 0,
+                                padding: '0 2px',
+                            }}
+                        >
+                            <ArrowLeftRight
+                                size={16}
+                                color="rgba(255,255,255,0.2)"
+                            />
+                        </div>
+                        <OfferPanel
+                            name={partnerName}
+                            isYou={false}
+                            offer={theirOffer}
+                            accentRgb="52,211,153"
+                            accentHsl="hsl(157,90%,51%)"
+                        />
+                    </div>
+
+                    {/* What you got / what you gave — personal summary row */}
+                    <div
+                        style={{
+                            marginTop: '14px',
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 1fr',
+                            gap: '10px',
+                        }}
+                    >
+                        <div
+                            style={{
+                                borderRadius: '12px',
+                                background: 'rgba(139,92,246,0.06)',
+                                border: '1px solid rgba(139,92,246,0.15)',
+                                padding: '12px 14px',
+                            }}
+                        >
+                            <p
+                                style={{
+                                    fontSize: '10px',
+                                    fontWeight: 700,
+                                    letterSpacing: '0.1em',
+                                    textTransform: 'uppercase' as const,
+                                    color: 'rgba(139,92,246,0.8)',
+                                    margin: '0 0 8px',
+                                }}
+                            >
+                                You Gave
+                            </p>
+                            <OfferSummaryList
+                                offer={myOffer}
+                                emptyLabel="Nothing"
+                            />
+                        </div>
+                        <div
+                            style={{
+                                borderRadius: '12px',
+                                background: 'rgba(52,211,153,0.06)',
+                                border: '1px solid rgba(52,211,153,0.15)',
+                                padding: '12px 14px',
+                            }}
+                        >
+                            <p
+                                style={{
+                                    fontSize: '10px',
+                                    fontWeight: 700,
+                                    letterSpacing: '0.1em',
+                                    textTransform: 'uppercase' as const,
+                                    color: 'hsl(157,90%,51%)',
+                                    margin: '0 0 8px',
+                                }}
+                            >
+                                You Received
+                            </p>
+                            <OfferSummaryList
+                                offer={theirOffer}
+                                emptyLabel="Nothing"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* ── Trade details ── */}
+            <div style={{ ...CARD_STYLE, padding: '14px 16px' }}>
+                <div
+                    style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px',
+                    }}
+                >
+                    <div
+                        style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            fontSize: '13px',
+                        }}
+                    >
+                        <span style={{ color: 'rgba(255,255,255,0.35)' }}>
+                            Status
+                        </span>
+                        <span
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                color: 'hsl(157,90%,51%)',
+                                fontWeight: 600,
+                            }}
+                        >
+                            <CheckCircle size={13} /> Completed
+                        </span>
+                    </div>
+                    <div
+                        style={{
+                            height: '1px',
+                            background: 'rgba(255,255,255,0.05)',
+                        }}
+                    />
+                    <div
+                        style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            fontSize: '13px',
+                        }}
+                    >
+                        <span style={{ color: 'rgba(255,255,255,0.35)' }}>
+                            Participants
+                        </span>
+                        <span
+                            style={{
+                                color: 'rgba(255,255,255,0.7)',
+                                fontWeight: 500,
+                            }}
+                        >
+                            {myName} &amp; {partnerName}
+                        </span>
+                    </div>
+                    <div
+                        style={{
+                            height: '1px',
+                            background: 'rgba(255,255,255,0.05)',
+                        }}
+                    />
+                    <div
+                        style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            fontSize: '13px',
+                        }}
+                    >
+                        <span style={{ color: 'rgba(255,255,255,0.35)' }}>
+                            Completed at
+                        </span>
+                        <span
+                            style={{
+                                color: 'rgba(255,255,255,0.5)',
+                                fontFamily: '"DM Mono", monospace',
+                                fontSize: '12px',
+                            }}
+                        >
+                            {completedAt}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
             <p
                 style={{
+                    textAlign: 'center',
                     fontSize: '12px',
-                    color: 'rgba(255,255,255,0.25)',
+                    color: 'rgba(255,255,255,0.2)',
                     margin: 0,
                 }}
             >
@@ -1810,124 +2380,68 @@ function CompletedScreen({
     );
 }
 
-function ReceiptCard({
-    title,
-    side,
+function OfferSummaryList({
+    offer,
+    emptyLabel,
 }: {
-    title: string;
-    side: {
-        gold: number;
-        diamonds: number;
-        materials: OfferMaterial[];
-    };
+    offer: Offer | null | undefined;
+    emptyLabel: string;
 }) {
-    const isEmpty =
-        side.gold <= 0 &&
-        side.diamonds <= 0 &&
-        (side.materials ?? []).length === 0;
-    return (
-        <div
-            style={{
-                borderRadius: '12px',
-                border: '1px solid rgba(255,255,255,0.06)',
-                background: 'rgba(255,255,255,0.025)',
-                padding: '14px',
-            }}
-        >
+    const empty =
+        !offer ||
+        (offer.gold <= 0 &&
+            offer.diamonds <= 0 &&
+            (offer.materials ?? []).length === 0);
+    if (empty) {
+        return (
             <p
                 style={{
-                    fontSize: '10px',
-                    fontWeight: 600,
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase' as const,
-                    color: 'rgba(255,255,255,0.4)',
-                    marginBottom: '12px',
+                    fontSize: '13px',
+                    color: 'rgba(255,255,255,0.25)',
+                    fontStyle: 'italic',
+                    margin: 0,
                 }}
             >
-                {title}
+                {emptyLabel}
             </p>
-            {isEmpty ? (
-                <p
+        );
+    }
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {(offer?.gold ?? 0) > 0 && (
+                <span
                     style={{
                         fontSize: '13px',
-                        color: 'rgba(255,255,255,0.25)',
-                        fontStyle: 'italic',
-                        margin: 0,
+                        color: 'rgba(255,255,255,0.8)',
+                        fontWeight: 500,
                     }}
                 >
-                    Nothing
-                </p>
-            ) : (
-                <div
-                    style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '6px',
-                    }}
-                >
-                    {side.gold > 0 && (
-                        <div
-                            style={{
-                                display: 'flex',
-                                gap: '6px',
-                                alignItems: 'center',
-                                fontSize: '13px',
-                            }}
-                        >
-                            <span>💰</span>
-                            <span
-                                style={{
-                                    color: 'rgba(255,255,255,0.8)',
-                                    fontWeight: 500,
-                                }}
-                            >
-                                {side.gold.toLocaleString()} Gold
-                            </span>
-                        </div>
-                    )}
-                    {side.diamonds > 0 && (
-                        <div
-                            style={{
-                                display: 'flex',
-                                gap: '6px',
-                                alignItems: 'center',
-                                fontSize: '13px',
-                            }}
-                        >
-                            <span>💎</span>
-                            <span
-                                style={{
-                                    color: 'rgba(255,255,255,0.8)',
-                                    fontWeight: 500,
-                                }}
-                            >
-                                {side.diamonds.toLocaleString()} Diamonds
-                            </span>
-                        </div>
-                    )}
-                    {(side.materials ?? []).map((mat) => (
-                        <div
-                            key={mat.name}
-                            style={{
-                                display: 'flex',
-                                gap: '6px',
-                                alignItems: 'center',
-                                fontSize: '13px',
-                            }}
-                        >
-                            <span>🪨</span>
-                            <span
-                                style={{
-                                    color: 'rgba(255,255,255,0.8)',
-                                    fontWeight: 500,
-                                }}
-                            >
-                                {mat.name} ×{mat.quantity}
-                            </span>
-                        </div>
-                    ))}
-                </div>
+                    💰 {offer!.gold.toLocaleString()} Gold
+                </span>
             )}
+            {(offer?.diamonds ?? 0) > 0 && (
+                <span
+                    style={{
+                        fontSize: '13px',
+                        color: 'rgba(255,255,255,0.8)',
+                        fontWeight: 500,
+                    }}
+                >
+                    💎 {offer!.diamonds.toLocaleString()} Diamonds
+                </span>
+            )}
+            {(offer?.materials ?? []).map((m) => (
+                <span
+                    key={m.name}
+                    style={{
+                        fontSize: '13px',
+                        color: 'rgba(255,255,255,0.8)',
+                        fontWeight: 500,
+                    }}
+                >
+                    🪨 {m.name} ×{m.quantity}
+                </span>
+            ))}
         </div>
     );
 }
