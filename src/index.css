@@ -96,6 +96,22 @@
             Roboto,
             sans-serif;
     }
+
+    #root {
+        display: flex;
+        flex-direction: column;
+        min-height: 100dvh;
+    }
+}
+
+/* Large screen minimum widths */
+@media (min-width: 1024px) {
+    .tq-trade-root {
+        min-width: 900px !important;
+    }
+    .tq-index-card {
+        min-width: 460px !important;
+    }
 }
 
 @layer utilities {

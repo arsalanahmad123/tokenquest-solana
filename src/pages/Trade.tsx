@@ -548,6 +548,16 @@ const Trade = () => {
             `}</style>
 
             <div
+                style={{
+                    minHeight: '100dvh',
+                    width: '100%',
+                    background: 'hsl(0,0%,3%)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                }}
+            >
+            <div
                 className="tq-trade-root"
                 style={{
                     fontFamily: '"DM Sans", sans-serif',
@@ -557,8 +567,7 @@ const Trade = () => {
                     flexDirection: 'column',
                     minHeight: '100dvh',
                     width: '100%',
-                    maxWidth: '960px',
-                    margin: '0 auto',
+                    maxWidth: '1200px',
                     position: 'relative',
                 }}
             >
@@ -876,8 +885,8 @@ const Trade = () => {
                                 </div>
                             </div>
 
-                            {/* Gift trade banners */}
-                            {isGiftTrade && !tradeState.myConfirmed && (
+                            {/* Gift trade banners — only shown after user explicitly enables Gift Mode */}
+                            {giftMode && isGiftTrade && !tradeState.myConfirmed && (
                                 <div
                                     className="tq-fade"
                                     style={{
@@ -911,7 +920,7 @@ const Trade = () => {
                                     </span>
                                 </div>
                             )}
-                            {iAmGifting && !tradeState.myConfirmed && (
+                            {giftMode && iAmGifting && !tradeState.myConfirmed && (
                                 <div
                                     className="tq-fade"
                                     style={{
@@ -1046,33 +1055,67 @@ const Trade = () => {
                                                     }
                                                     title={
                                                         giftMode
-                                                            ? 'Disable gift mode — add your own offer'
+                                                            ? 'Disable gift mode'
                                                             : 'Enable gift mode — confirm without offering anything'
                                                     }
                                                     style={{
                                                         display: 'flex',
                                                         alignItems: 'center',
-                                                        gap: '5px',
+                                                        gap: '7px',
                                                         fontSize: '11px',
                                                         fontWeight: 600,
-                                                        letterSpacing: '0.05em',
-                                                        borderRadius: '8px',
+                                                        letterSpacing: '0.04em',
+                                                        borderRadius: '20px',
                                                         border: giftMode
-                                                            ? '1px solid rgba(250,204,21,0.4)'
-                                                            : '1px solid rgba(255,255,255,0.08)',
+                                                            ? '1px solid rgba(250,204,21,0.35)'
+                                                            : '1px solid rgba(255,255,255,0.1)',
                                                         background: giftMode
-                                                            ? 'rgba(250,204,21,0.12)'
-                                                            : 'rgba(255,255,255,0.04)',
+                                                            ? 'rgba(250,204,21,0.1)'
+                                                            : 'rgba(255,255,255,0.05)',
                                                         color: giftMode
-                                                            ? 'rgba(250,204,21,0.9)'
-                                                            : 'rgba(255,255,255,0.35)',
-                                                        padding: '4px 8px',
+                                                            ? 'rgba(250,204,21,0.95)'
+                                                            : 'rgba(255,255,255,0.45)',
+                                                        padding: '5px 10px 5px 6px',
                                                         cursor: 'pointer',
-                                                        transition: 'all 0.15s',
+                                                        transition: 'all 0.2s',
                                                         fontFamily:
                                                             '"DM Sans", sans-serif',
+                                                        flexShrink: 0,
                                                     }}
                                                 >
+                                                    {/* Track + thumb */}
+                                                    <span
+                                                        style={{
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            width: '28px',
+                                                            height: '16px',
+                                                            borderRadius: '8px',
+                                                            background: giftMode
+                                                                ? 'rgba(250,204,21,0.5)'
+                                                                : 'rgba(255,255,255,0.12)',
+                                                            transition: 'background 0.2s',
+                                                            padding: '2px',
+                                                            flexShrink: 0,
+                                                        }}
+                                                    >
+                                                        <span
+                                                            style={{
+                                                                width: '12px',
+                                                                height: '12px',
+                                                                borderRadius: '50%',
+                                                                background: giftMode
+                                                                    ? 'rgba(250,204,21,1)'
+                                                                    : 'rgba(255,255,255,0.5)',
+                                                                transform: giftMode
+                                                                    ? 'translateX(12px)'
+                                                                    : 'translateX(0)',
+                                                                transition: 'transform 0.2s, background 0.2s',
+                                                                display: 'inline-block',
+                                                                flexShrink: 0,
+                                                            }}
+                                                        />
+                                                    </span>
                                                     🎁 Gift Mode
                                                 </button>
                                             )}
@@ -1868,6 +1911,7 @@ const Trade = () => {
                 >
                     <ShieldCheck size={11} /> End-to-end secured · {brandName}
                 </footer>
+            </div>
             </div>
         </>
     );

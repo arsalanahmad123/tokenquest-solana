@@ -382,6 +382,19 @@ const Index = () => {
 
             <div
                 style={{
+                    minHeight: '100dvh',
+                    width: '100%',
+                    background: 'hsl(0,0%,3%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '32px 20px',
+                    boxSizing: 'border-box',
+                }}
+            >
+            <div
+                className="tq-index-card"
+                style={{
                     fontFamily: '"DM Sans", sans-serif',
                     background: 'hsl(0,0%,3%)',
                     color: 'rgba(255,255,255,0.9)',
@@ -391,6 +404,8 @@ const Index = () => {
                     boxShadow:
                         '0 0 0 1px rgba(255,255,255,0.04), 0 32px 64px -16px rgba(0,0,0,0.8)',
                     position: 'relative',
+                    width: '100%',
+                    maxWidth: '520px',
                 }}
             >
                 {/* Ambient glow */}
@@ -636,6 +651,7 @@ const Index = () => {
                         }}
                     />
                 </div>
+            </div>
             </div>
         </>
     );
