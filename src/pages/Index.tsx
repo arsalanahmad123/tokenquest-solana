@@ -267,11 +267,33 @@ const Index = () => {
         if (invalidReason) showStatus(invalidReason, 'error');
     }, [invalidReason, showStatus]);
 
+    const checkPhantomNetwork = async (): Promise<boolean> => {
+        try {
+            const phantom = (window as any).phantom?.solana ?? (window as any).solana;
+            if (!phantom) return true; // no wallet detected yet, let SDK handle it
+            // Phantom exposes the cluster via getGenesisHash — testnet has a known hash
+            // Instead, we check the network via the wallet's connection if available
+            const network: string | undefined = phantom?.networkUrl ?? phantom?.connection?._rpcEndpoint;
+            if (network && (network.includes('devnet') || network.includes('mainnet'))) {
+                showStatus(
+                    `⚠️ Your wallet appears to be on ${network.includes('devnet') ? 'Devnet' : 'Mainnet'}. Please switch to Testnet in your wallet settings before connecting.`,
+                    'error'
+                );
+                return false;
+            }
+            return true;
+        } catch {
+            return true; // can't detect, proceed and let it fail naturally
+        }
+    };
+
     const handleConnect = async () => {
         if (!solana) return;
         setConnecting(true);
         showStatus('Awaiting wallet approval…', 'info');
         try {
+            const networkOk = await checkPhantomNetwork();
+            if (!networkOk) return;
             const res = await solana.connect();
             if (!res?.success)
                 throw new Error(res?.error || 'Connection failed');
@@ -548,6 +570,30 @@ const Index = () => {
                                     <path d="M12 6v6l4 2" />
                                 </svg>
                             </div>
+                        </div>
+                    )}
+
+                    {/* Testnet network warning */}
+                    {!connected && !depositComplete && (
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                gap: '10px',
+                                borderRadius: '12px',
+                                background: 'rgba(251,191,36,0.06)',
+                                border: '1px solid rgba(251,191,36,0.2)',
+                                padding: '12px 14px',
+                                marginBottom: '16px',
+                                fontSize: '12px',
+                                color: 'rgba(251,191,36,0.85)',
+                                lineHeight: 1.55,
+                            }}
+                        >
+                            <span style={{ fontSize: '15px', lineHeight: 1 }}>⚠️</span>
+                            <span>
+                                <strong>Testnet only.</strong> Make sure your wallet (Phantom / Solflare) is switched to <strong>Solana Testnet</strong> before connecting. Devnet or Mainnet wallets will not work.
+                            </span>
                         </div>
                     )}
 
