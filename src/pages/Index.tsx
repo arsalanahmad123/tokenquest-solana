@@ -165,6 +165,7 @@ const Index = () => {
     const [connecting, setConnecting] = useState(false);
     const [depositing, setDepositing] = useState(false);
     const [depositComplete, setDepositComplete] = useState(false);
+    const [depositAttempted, setDepositAttempted] = useState(false);
     const [statusMsg, setStatusMsg] = useState<string | null>(null);
     const [statusType, setStatusType] = useState<StatusType>(null);
 
@@ -269,12 +270,17 @@ const Index = () => {
 
     const checkPhantomNetwork = async (): Promise<boolean> => {
         try {
-            const phantom = (window as any).phantom?.solana ?? (window as any).solana;
+            const phantom =
+                (window as any).phantom?.solana ?? (window as any).solana;
             if (!phantom) return true; // no wallet detected yet, let SDK handle it
             // Phantom exposes the cluster via getGenesisHash — testnet has a known hash
             // Instead, we check the network via the wallet's connection if available
-            const network: string | undefined = phantom?.networkUrl ?? phantom?.connection?._rpcEndpoint;
-            if (network && (network.includes('devnet') || network.includes('mainnet'))) {
+            const network: string | undefined =
+                phantom?.networkUrl ?? phantom?.connection?._rpcEndpoint;
+            if (
+                network &&
+                (network.includes('devnet') || network.includes('mainnet'))
+            ) {
                 showStatus(
                     `⚠️ Your wallet appears to be on ${network.includes('devnet') ? 'Devnet' : 'Mainnet'}. Please switch to Testnet in your wallet settings before connecting.`,
                     'error'
@@ -307,8 +313,9 @@ const Index = () => {
     };
 
     const handleDeposit = async () => {
-        if (!solana || !amountParam) return;
+        if (!solana || !amountParam || depositAttempted) return;
         setDepositing(true);
+        setDepositAttempted(true);
         showStatus('Processing transaction…', 'info');
         try {
             const res = await solana.deposit(amountParam);
@@ -414,290 +421,302 @@ const Index = () => {
                     boxSizing: 'border-box',
                 }}
             >
-            <div
-                className="tq-index-card"
-                style={{
-                    fontFamily: '"DM Sans", sans-serif',
-                    background: 'hsl(0,0%,3%)',
-                    color: 'rgba(255,255,255,0.9)',
-                    borderRadius: '20px',
-                    overflow: 'hidden',
-                    border: '1px solid rgba(255,255,255,0.07)',
-                    boxShadow:
-                        '0 0 0 1px rgba(255,255,255,0.04), 0 32px 64px -16px rgba(0,0,0,0.8)',
-                    position: 'relative',
-                    width: '100%',
-                    maxWidth: '520px',
-                }}
-            >
-                {/* Ambient glow */}
                 <div
+                    className="tq-index-card"
                     style={{
-                        position: 'absolute',
-                        inset: 0,
-                        pointerEvents: 'none',
-                        background:
-                            'radial-gradient(circle at 85% 10%, hsla(264,100%,64%,0.07) 0%, transparent 50%), radial-gradient(circle at 15% 90%, hsla(157,90%,51%,0.06) 0%, transparent 50%)',
-                    }}
-                />
-
-                {/* Brand header */}
-                <BrandHeader
-                    logoUrl={logoUrl}
-                    brandName={brandName}
-                    platform={platform}
-                />
-
-                {/* Card body */}
-                <div
-                    style={{
+                        fontFamily: '"DM Sans", sans-serif',
+                        background: 'hsl(0,0%,3%)',
+                        color: 'rgba(255,255,255,0.9)',
+                        borderRadius: '20px',
+                        overflow: 'hidden',
+                        border: '1px solid rgba(255,255,255,0.07)',
+                        boxShadow:
+                            '0 0 0 1px rgba(255,255,255,0.04), 0 32px 64px -16px rgba(0,0,0,0.8)',
                         position: 'relative',
-                        padding: '28px 24px 24px',
+                        width: '100%',
+                        maxWidth: '520px',
                     }}
                 >
-                    <StatusBadge
-                        label={getStepLabel()}
-                        active={connected || depositComplete}
+                    {/* Ambient glow */}
+                    <div
+                        style={{
+                            position: 'absolute',
+                            inset: 0,
+                            pointerEvents: 'none',
+                            background:
+                                'radial-gradient(circle at 85% 10%, hsla(264,100%,64%,0.07) 0%, transparent 50%), radial-gradient(circle at 15% 90%, hsla(157,90%,51%,0.06) 0%, transparent 50%)',
+                        }}
                     />
 
-                    {/* Heading */}
-                    <h1
+                    {/* Brand header */}
+                    <BrandHeader
+                        logoUrl={logoUrl}
+                        brandName={brandName}
+                        platform={platform}
+                    />
+
+                    {/* Card body */}
+                    <div
                         style={{
-                            fontSize: 'clamp(22px, 5vw, 30px)',
-                            fontWeight: 700,
-                            lineHeight: 1.15,
-                            letterSpacing: '-0.02em',
-                            color: 'rgba(255,255,255,0.97)',
-                            margin: '0 0 10px',
-                            fontFamily: '"DM Sans", sans-serif',
+                            position: 'relative',
+                            padding: '28px 24px 24px',
                         }}
                     >
-                        {getHeading()}
-                    </h1>
+                        <StatusBadge
+                            label={getStepLabel()}
+                            active={connected || depositComplete}
+                        />
 
-                    <p
-                        style={{
-                            fontSize: '14px',
-                            lineHeight: 1.65,
-                            color: 'rgba(255,255,255,0.45)',
-                            margin: '0 0 28px',
-                        }}
-                    >
-                        {getDescription()}
-                    </p>
-
-                    {/* Deposit amount card */}
-                    {isDeposit && (
-                        <div
-                            className="tq-animate"
+                        {/* Heading */}
+                        <h1
                             style={{
-                                borderRadius: '14px',
-                                background: 'rgba(255,255,255,0.03)',
-                                border: '1px solid rgba(255,255,255,0.07)',
-                                padding: '16px 20px',
-                                marginBottom: '16px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
+                                fontSize: 'clamp(22px, 5vw, 30px)',
+                                fontWeight: 700,
+                                lineHeight: 1.15,
+                                letterSpacing: '-0.02em',
+                                color: 'rgba(255,255,255,0.97)',
+                                margin: '0 0 10px',
+                                fontFamily: '"DM Sans", sans-serif',
                             }}
                         >
-                            <div>
-                                <div
-                                    style={{
-                                        fontSize: '11px',
-                                        fontWeight: 600,
-                                        letterSpacing: '0.08em',
-                                        textTransform: 'uppercase',
-                                        color: 'rgba(255,255,255,0.3)',
-                                        marginBottom: '6px',
-                                    }}
-                                >
-                                    Amount to Deposit
-                                </div>
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'baseline',
-                                        gap: '6px',
-                                    }}
-                                >
-                                    <span
-                                        style={{
-                                            fontFamily: '"DM Mono", monospace',
-                                            fontSize: '28px',
-                                            fontWeight: 500,
-                                            color: 'rgba(255,255,255,0.95)',
-                                            letterSpacing: '-0.02em',
-                                        }}
-                                    >
-                                        {amountParam || '0.00'}
-                                    </span>
-                                    <span
-                                        style={{
-                                            fontSize: '14px',
-                                            fontWeight: 600,
-                                            color: 'hsl(157,90%,51%)',
-                                            letterSpacing: '0.05em',
-                                        }}
-                                    >
-                                        Diamonds
-                                    </span>
-                                </div>
-                            </div>
+                            {getHeading()}
+                        </h1>
+
+                        <p
+                            style={{
+                                fontSize: '14px',
+                                lineHeight: 1.65,
+                                color: 'rgba(255,255,255,0.45)',
+                                margin: '0 0 28px',
+                            }}
+                        >
+                            {getDescription()}
+                        </p>
+
+                        {/* Deposit amount card */}
+                        {isDeposit && (
                             <div
+                                className="tq-animate"
                                 style={{
-                                    width: '40px',
-                                    height: '40px',
-                                    borderRadius: '12px',
-                                    background:
-                                        'linear-gradient(135deg, hsl(264,100%,64%,0.15) 0%, hsl(157,90%,51%,0.15) 100%)',
-                                    border: '1px solid rgba(255,255,255,0.08)',
+                                    borderRadius: '14px',
+                                    background: 'rgba(255,255,255,0.03)',
+                                    border: '1px solid rgba(255,255,255,0.07)',
+                                    padding: '16px 20px',
+                                    marginBottom: '16px',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    justifyContent: 'center',
+                                    justifyContent: 'space-between',
                                 }}
                             >
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="hsl(157,90%,51%)"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    style={{ width: '18px', height: '18px' }}
+                                <div>
+                                    <div
+                                        style={{
+                                            fontSize: '11px',
+                                            fontWeight: 600,
+                                            letterSpacing: '0.08em',
+                                            textTransform: 'uppercase',
+                                            color: 'rgba(255,255,255,0.3)',
+                                            marginBottom: '6px',
+                                        }}
+                                    >
+                                        Amount to Deposit
+                                    </div>
+                                    <div
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'baseline',
+                                            gap: '6px',
+                                        }}
+                                    >
+                                        <span
+                                            style={{
+                                                fontFamily:
+                                                    '"DM Mono", monospace',
+                                                fontSize: '28px',
+                                                fontWeight: 500,
+                                                color: 'rgba(255,255,255,0.95)',
+                                                letterSpacing: '-0.02em',
+                                            }}
+                                        >
+                                            {amountParam || '0.00'}
+                                        </span>
+                                        <span
+                                            style={{
+                                                fontSize: '14px',
+                                                fontWeight: 600,
+                                                color: 'hsl(157,90%,51%)',
+                                                letterSpacing: '0.05em',
+                                            }}
+                                        >
+                                            Diamonds
+                                        </span>
+                                    </div>
+                                </div>
+                                <div
+                                    style={{
+                                        width: '40px',
+                                        height: '40px',
+                                        borderRadius: '12px',
+                                        background:
+                                            'linear-gradient(135deg, hsl(264,100%,64%,0.15) 0%, hsl(157,90%,51%,0.15) 100%)',
+                                        border: '1px solid rgba(255,255,255,0.08)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                    }}
                                 >
-                                    <circle cx="12" cy="12" r="10" />
-                                    <path d="M12 6v6l4 2" />
-                                </svg>
+                                    <svg
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="hsl(157,90%,51%)"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        style={{
+                                            width: '18px',
+                                            height: '18px',
+                                        }}
+                                    >
+                                        <circle cx="12" cy="12" r="10" />
+                                        <path d="M12 6v6l4 2" />
+                                    </svg>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {/* Testnet network warning */}
-                    {!connected && !depositComplete && (
-                        <div
-                            style={{
-                                display: 'flex',
-                                alignItems: 'flex-start',
-                                gap: '10px',
-                                borderRadius: '12px',
-                                background: 'rgba(251,191,36,0.06)',
-                                border: '1px solid rgba(251,191,36,0.2)',
-                                padding: '12px 14px',
-                                marginBottom: '16px',
-                                fontSize: '12px',
-                                color: 'rgba(251,191,36,0.85)',
-                                lineHeight: 1.55,
-                            }}
-                        >
-                            <span style={{ fontSize: '15px', lineHeight: 1 }}>⚠️</span>
-                            <span>
-                                <strong>Testnet only.</strong> Make sure your wallet (Phantom / Solflare) is switched to <strong>Solana Testnet</strong> before connecting. Devnet or Mainnet wallets will not work.
-                            </span>
-                        </div>
-                    )}
+                        {/* Testnet network warning */}
+                        {!connected && !depositComplete && (
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    gap: '10px',
+                                    borderRadius: '12px',
+                                    background: 'rgba(251,191,36,0.06)',
+                                    border: '1px solid rgba(251,191,36,0.2)',
+                                    padding: '12px 14px',
+                                    marginBottom: '16px',
+                                    fontSize: '12px',
+                                    color: 'rgba(251,191,36,0.85)',
+                                    lineHeight: 1.55,
+                                }}
+                            >
+                                <span
+                                    style={{ fontSize: '15px', lineHeight: 1 }}
+                                >
+                                    ⚠️
+                                </span>
+                                <span>
+                                    <strong>Testnet only.</strong> Make sure
+                                    your wallet (Phantom / Solflare) is switched
+                                    to <strong>Solana Testnet</strong> before
+                                    connecting. Devnet or Mainnet wallets will
+                                    not work.
+                                </span>
+                            </div>
+                        )}
 
-                    {/* Action button */}
-                    {!isDeposit ? (
-                        <button
-                            className="tq-btn-primary"
-                            onClick={handleConnect}
-                            disabled={isInvalid || connecting || connected}
-                        >
-                            {connected ? (
-                                <>
-                                    <CheckCircle2
-                                        size={16}
-                                        color="hsl(157,90%,51%)"
-                                    />
-                                    Connected
-                                </>
-                            ) : connecting ? (
-                                <>
-                                    <Spinner />
-                                    Connecting…
-                                </>
-                            ) : (
-                                <>
-                                    <Wallet size={16} />
-                                    Connect Wallet
-                                    <ArrowRight
-                                        size={16}
-                                        style={{ marginLeft: 'auto' }}
-                                    />
-                                </>
-                            )}
-                        </button>
-                    ) : (
-                        <button
-                            className="tq-btn-accent"
-                            onClick={handleDeposit}
-                            disabled={depositing || depositComplete}
-                        >
-                            {depositComplete ? (
-                                <>
-                                    <CheckCircle2 size={16} />
-                                    Complete
-                                </>
-                            ) : depositing ? (
-                                <>
-                                    <Spinner />
-                                    Processing…
-                                </>
-                            ) : (
-                                <>
-                                    <ArrowDown size={16} />
-                                    Confirm Deposit
-                                </>
-                            )}
-                        </button>
-                    )}
+                        {/* Action button */}
+                        {!isDeposit ? (
+                            <button
+                                className="tq-btn-primary"
+                                onClick={handleConnect}
+                                disabled={isInvalid || connecting || connected}
+                            >
+                                {connected ? (
+                                    <>
+                                        <CheckCircle2
+                                            size={16}
+                                            color="hsl(157,90%,51%)"
+                                        />
+                                        Connected
+                                    </>
+                                ) : connecting ? (
+                                    <>
+                                        <Spinner />
+                                        Connecting…
+                                    </>
+                                ) : (
+                                    <>
+                                        <Wallet size={16} />
+                                        Connect Wallet
+                                        <ArrowRight
+                                            size={16}
+                                            style={{ marginLeft: 'auto' }}
+                                        />
+                                    </>
+                                )}
+                            </button>
+                        ) : (
+                            <button
+                                className="tq-btn-accent"
+                                onClick={handleDeposit}
+                                disabled={depositing || depositComplete || depositAttempted}
+                            >
+                                {depositComplete ? (
+                                    <>
+                                        <CheckCircle2 size={16} />
+                                        Complete
+                                    </>
+                                ) : depositing ? (
+                                    <>
+                                        <Spinner />
+                                        Processing…
+                                    </>
+                                ) : (
+                                    <>
+                                        <ArrowDown size={16} />
+                                        Confirm Deposit
+                                    </>
+                                )}
+                            </button>
+                        )}
 
-                    {/* Status message */}
-                    {statusMsg && statusType && (
-                        <div
-                            className="tq-animate"
-                            style={{
-                                marginTop: '14px',
-                                borderRadius: '12px',
-                                padding: '12px 16px',
-                                fontSize: '13px',
-                                textAlign: 'center',
-                                background: statusColors[statusType].bg,
-                                border: `1px solid ${statusColors[statusType].border}`,
-                                color: statusColors[statusType].text,
-                            }}
-                        >
-                            {statusMsg}
-                        </div>
-                    )}
-                </div>
+                        {/* Status message */}
+                        {statusMsg && statusType && (
+                            <div
+                                className="tq-animate"
+                                style={{
+                                    marginTop: '14px',
+                                    borderRadius: '12px',
+                                    padding: '12px 16px',
+                                    fontSize: '13px',
+                                    textAlign: 'center',
+                                    background: statusColors[statusType].bg,
+                                    border: `1px solid ${statusColors[statusType].border}`,
+                                    color: statusColors[statusType].text,
+                                }}
+                            >
+                                {statusMsg}
+                            </div>
+                        )}
+                    </div>
 
-                {/* Footer */}
-                <div
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px',
-                        padding: '12px 24px 16px',
-                        borderTop: '1px solid rgba(255,255,255,0.04)',
-                        fontSize: '13px',
-                        color: 'rgba(255,255,255,0.2)',
-                        letterSpacing: '0.03em',
-                    }}
-                >
-                    Powered by
-                    <img
-                        src="https://cdn.prod.website-files.com/6877cb653b5f265eeac09fa9/6877d604162ffb3ea55f5f14_relume-237698.png"
-                        alt=""
+                    {/* Footer */}
+                    <div
                         style={{
-                            width: '90px',
-                            height: '20px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            padding: '12px 24px 16px',
+                            borderTop: '1px solid rgba(255,255,255,0.04)',
+                            fontSize: '13px',
+                            color: 'rgba(255,255,255,0.2)',
+                            letterSpacing: '0.03em',
                         }}
-                    />
+                    >
+                        Powered by
+                        <img
+                            src="https://cdn.prod.website-files.com/6877cb653b5f265eeac09fa9/6877d604162ffb3ea55f5f14_relume-237698.png"
+                            alt=""
+                            style={{
+                                width: '90px',
+                                height: '20px',
+                            }}
+                        />
+                    </div>
                 </div>
-            </div>
             </div>
         </>
     );
