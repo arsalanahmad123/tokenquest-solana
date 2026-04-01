@@ -191,17 +191,17 @@ const Index = () => {
 
     const solana = useMemo(() => {
         if (!token || !type || !userId || !window.TokenQuestSDK) return null;
-        // const baseUrl = 'http://localhost:3000/api';
-        const baseUrl = 'https://testbot.tokenquest.ca/api';
+        const baseUrl = 'http://localhost:3000/api';
+        // const baseUrl = 'https://testbot.tokenquest.ca/api';
         try {
             return new window.TokenQuestSDK.SolanaInstance({
                 config: {
                     discordId: type === 'discord' ? userId : undefined,
                     telegramId: type === 'telegram' ? userId : undefined,
                     chain: 'solana',
-                    cluster: 'testnet',
-                    programId: '5fL6L5TN3WWo4st411Bw12pVZjLX5a7eQ4PzbiGPd6kA',
-                    mint: 'BaoQjS6ySAPV4MZtA9rpdidq1ufJ5kwb7G6UqYoBE1rb',
+                    cluster: 'devnet',
+                    programId: 'DpuRE4rSmV7RUiDQh6WUGYZwHPp1EpwwSfXWnkqk2LAR',
+                    mint: '78q1UKQj43gk9XyCZ49z9FRRLXVuByx24nu5pnsW7Nwc',
                     api: {
                         baseUrl,
                         connectPath: 'solana/link-wallet',
@@ -651,7 +651,11 @@ const Index = () => {
                             <button
                                 className="tq-btn-accent"
                                 onClick={handleDeposit}
-                                disabled={depositing || depositComplete || depositAttempted}
+                                disabled={
+                                    depositing ||
+                                    depositComplete ||
+                                    depositAttempted
+                                }
                             >
                                 {depositComplete ? (
                                     <>
