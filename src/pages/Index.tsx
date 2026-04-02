@@ -199,7 +199,7 @@ const Index = () => {
                     discordId: type === 'discord' ? userId : undefined,
                     telegramId: type === 'telegram' ? userId : undefined,
                     chain: 'solana',
-                    cluster: 'devnet',
+                    cluster: 'testnet',
                     programId: 'DpuRE4rSmV7RUiDQh6WUGYZwHPp1EpwwSfXWnkqk2LAR',
                     mint: '78q1UKQj43gk9XyCZ49z9FRRLXVuByx24nu5pnsW7Nwc',
                     api: {
