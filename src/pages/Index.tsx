@@ -199,7 +199,7 @@ const Index = () => {
                     discordId: type === 'discord' ? userId : undefined,
                     telegramId: type === 'telegram' ? userId : undefined,
                     chain: 'solana',
-                    cluster: 'testnet',
+                    cluster: 'devnet',
                     programId: 'DpuRE4rSmV7RUiDQh6WUGYZwHPp1EpwwSfXWnkqk2LAR',
                     mint: '78q1UKQj43gk9XyCZ49z9FRRLXVuByx24nu5pnsW7Nwc',
                     api: {
@@ -279,10 +279,10 @@ const Index = () => {
                 phantom?.networkUrl ?? phantom?.connection?._rpcEndpoint;
             if (
                 network &&
-                (network.includes('devnet') || network.includes('mainnet'))
+                (network.includes('testnet') || network.includes('mainnet'))
             ) {
                 showStatus(
-                    `⚠️ Your wallet appears to be on ${network.includes('devnet') ? 'Devnet' : 'Mainnet'}. Please switch to Testnet in your wallet settings before connecting.`,
+                    `⚠️ Your wallet appears to be on ${network.includes('testnet') ? 'Testnet' : 'Mainnet'}. Please switch to Devnet in your wallet settings before connecting.`,
                     'error'
                 );
                 return false;
@@ -584,7 +584,7 @@ const Index = () => {
                             </div>
                         )}
 
-                        {/* Testnet network warning */}
+                        {/* Devnet network warning */}
                         {!connected && !depositComplete && (
                             <div
                                 style={{
@@ -607,10 +607,10 @@ const Index = () => {
                                     ⚠️
                                 </span>
                                 <span>
-                                    <strong>Testnet only.</strong> Make sure
-                                    your wallet (Phantom / Solflare) is switched
-                                    to <strong>Solana Testnet</strong> before
-                                    connecting. Devnet or Mainnet wallets will
+                                    <strong>Devnet only.</strong> Make sure your
+                                    wallet (Phantom / Solflare) is switched to{' '}
+                                    <strong>Solana Devnet</strong> before
+                                    connecting. Testnet or Mainnet wallets will
                                     not work.
                                 </span>
                             </div>
