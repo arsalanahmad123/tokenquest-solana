@@ -5,10 +5,22 @@ import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js';
 import path from 'path';
 
 export default defineConfig({
-    define: {
-        'process.env.NODE_ENV': JSON.stringify('production'),
-    },
     plugins: [
+        {
+            name: 'solana-buffer-inject',
+            transform(code, id) {
+                if (
+                    id.includes('node_modules') &&
+                    (id.includes('@solana') || id.includes('@coral-xyz')) &&
+                    code.includes('Buffer')
+                ) {
+                    return {
+                        code: `import { Buffer } from 'buffer';\n${code}`,
+                        map: null,
+                    };
+                }
+            },
+        },
         react({
             babel: {
                 plugins: [['babel-plugin-react-compiler']],
@@ -40,14 +52,24 @@ export default defineConfig({
             fileName: (format) => `widget.${format}.js`,
             formats: ['umd', 'iife'],
         },
-        rollupOptions: {
-            // @ts-ignore
-            // inject: [path.resolve(__dirname, 'src/process-shim.ts')],
-        },
     },
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './src'),
+            buffer: 'buffer',
+        },
+    },
+    optimizeDeps: {
+        include: [
+            'buffer',
+            '@coral-xyz/anchor',
+            '@solana/web3.js',
+            '@solana/spl-token',
+        ],
+        esbuildOptions: {
+            define: {
+                global: 'globalThis',
+            },
         },
     },
 });

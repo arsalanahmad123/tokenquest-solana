@@ -1,12 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ArrowRight, ArrowDown, Wallet, CheckCircle2 } from 'lucide-react';
-
-declare global {
-    interface Window {
-        TokenQuestSDK: any;
-    }
-}
+import { SolanaInstance } from '@/lib/sdk';
 
 type StatusType = 'info' | 'success' | 'error' | null;
 
@@ -178,6 +173,14 @@ const Index = () => {
     const logoUrl = searchParams.get('logo');
     const customHeading = searchParams.get('heading');
 
+    const programId = searchParams.get('programId');
+    const mint = searchParams.get('mint');
+    const cluster = searchParams.get('cluster') || 'testnet';
+    const baseUrl = searchParams.get('baseUrl');
+    const connectPath = searchParams.get('connectPath') ?? 'solana/link-wallet';
+    const depositPath =
+        searchParams.get('depositPath') ?? 'solana/complete-deposit';
+
     const amount = amountParam ? parseFloat(amountParam) : null;
     const hasAmount = amount !== null && !isNaN(amount) && amount > 0;
     const userId = type === 'discord' ? discordId : telegramId;
@@ -190,31 +193,50 @@ const Index = () => {
               : 'App';
 
     const solana = useMemo(() => {
-        if (!token || !type || !userId || !window.TokenQuestSDK) return null;
-        // const baseUrl = 'http://localhost:3000/api';
-        const baseUrl = 'https://testbot.tokenquest.ca/api';
+        if (!token || !type || !userId) return null;
         try {
-            return new window.TokenQuestSDK.SolanaInstance({
-                config: {
-                    discordId: type === 'discord' ? userId : undefined,
-                    telegramId: type === 'telegram' ? userId : undefined,
-                    chain: 'solana',
-                    cluster: 'devnet',
-                    programId: 'DpuRE4rSmV7RUiDQh6WUGYZwHPp1EpwwSfXWnkqk2LAR',
-                    mint: '78q1UKQj43gk9XyCZ49z9FRRLXVuByx24nu5pnsW7Nwc',
-                    api: {
-                        baseUrl,
-                        connectPath: 'solana/link-wallet',
-                        depositPath: 'solana/complete-deposit',
-                    },
-                    jwt: token,
-                },
-            });
+            if (programId && mint && cluster && baseUrl) {
+                const config =
+                    type === 'discord'
+                        ? {
+                              discordId: userId,
+                              telegramId: undefined,
+                              chain: 'solana' as const,
+                              cluster: cluster as any,
+                              programId,
+                              mint,
+                              api: { baseUrl, connectPath, depositPath },
+                              jwt: token,
+                          }
+                        : {
+                              discordId: undefined,
+                              telegramId: userId,
+                              chain: 'solana' as const,
+                              cluster: cluster as any,
+                              programId,
+                              mint,
+                              api: { baseUrl, connectPath, depositPath },
+                              jwt: token,
+                          };
+
+                return new SolanaInstance({ config } as any);
+            }
+            return new SolanaInstance({ token });
         } catch (err) {
             console.error('SDK Initialization failed:', err);
             return null;
         }
-    }, [token, type, userId]);
+    }, [
+        token,
+        type,
+        userId,
+        programId,
+        mint,
+        cluster,
+        baseUrl,
+        connectPath,
+        depositPath,
+    ]);
 
     const getHeading = () => {
         if (customHeading) return customHeading;
@@ -279,10 +301,10 @@ const Index = () => {
                 phantom?.networkUrl ?? phantom?.connection?._rpcEndpoint;
             if (
                 network &&
-                (network.includes('testnet') || network.includes('mainnet'))
+                (network.includes('devnet') || network.includes('mainnet'))
             ) {
                 showStatus(
-                    `⚠️ Your wallet appears to be on ${network.includes('testnet') ? 'Testnet' : 'Mainnet'}. Please switch to Devnet in your wallet settings before connecting.`,
+                    `⚠️ Your wallet appears to be on ${network.includes('devnet') ? 'Devnet' : 'Mainnet'}. Please switch to Testnet in your wallet settings before connecting.`,
                     'error'
                 );
                 return false;
@@ -313,12 +335,13 @@ const Index = () => {
     };
 
     const handleDeposit = async () => {
-        if (!solana || !amountParam || depositAttempted) return;
+        if (!solana || amount === null || isNaN(amount) || depositAttempted)
+            return;
         setDepositing(true);
         setDepositAttempted(true);
         showStatus('Processing transaction…', 'info');
         try {
-            const res = await solana.deposit(amountParam);
+            const res = await solana.deposit(amount);
             if (!res?.success) throw new Error(res?.error || 'Deposit failed');
             setDepositComplete(true);
             showStatus(
@@ -584,37 +607,43 @@ const Index = () => {
                             </div>
                         )}
 
-                        {/* Devnet network warning */}
-                        {!connected && !depositComplete && (
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'flex-start',
-                                    gap: '10px',
-                                    borderRadius: '12px',
-                                    background: 'rgba(251,191,36,0.06)',
-                                    border: '1px solid rgba(251,191,36,0.2)',
-                                    padding: '12px 14px',
-                                    marginBottom: '16px',
-                                    fontSize: '12px',
-                                    color: 'rgba(251,191,36,0.85)',
-                                    lineHeight: 1.55,
-                                }}
-                            >
-                                <span
-                                    style={{ fontSize: '15px', lineHeight: 1 }}
+                        {/* Testnet network warning */}
+                        {!connected &&
+                            !depositComplete &&
+                            (cluster === 'testnet' || !cluster) && (
+                                <div
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'flex-start',
+                                        gap: '10px',
+                                        borderRadius: '12px',
+                                        background: 'rgba(251,191,36,0.06)',
+                                        border: '1px solid rgba(251,191,36,0.2)',
+                                        padding: '12px 14px',
+                                        marginBottom: '16px',
+                                        fontSize: '12px',
+                                        color: 'rgba(251,191,36,0.85)',
+                                        lineHeight: 1.55,
+                                    }}
                                 >
-                                    ⚠️
-                                </span>
-                                <span>
-                                    <strong>Devnet only.</strong> Make sure your
-                                    wallet (Phantom / Solflare) is switched to{' '}
-                                    <strong>Solana Devnet</strong> before
-                                    connecting. Testnet or Mainnet wallets will
-                                    not work.
-                                </span>
-                            </div>
-                        )}
+                                    <span
+                                        style={{
+                                            fontSize: '15px',
+                                            lineHeight: 1,
+                                        }}
+                                    >
+                                        ⚠️
+                                    </span>
+                                    <span>
+                                        <strong>Testnet only.</strong> Make sure
+                                        your wallet (Phantom / Solflare) is
+                                        switched to{' '}
+                                        <strong>Solana Testnet</strong> before
+                                        connecting. Devnet or Mainnet wallets
+                                        will not work.
+                                    </span>
+                                </div>
+                            )}
 
                         {/* Action button */}
                         {!isDeposit ? (
